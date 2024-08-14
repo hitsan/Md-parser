@@ -7,7 +7,7 @@ pub enum Token<'a> {
     Word(&'a str),
     Italic(&'a str),
     Bold(&'a str),
-    Bar(&'a str),
+    Strikethrough(&'a str),
     Link(&'a str),
     // Line(Vec<Token<'a>, Box<Line>>),
     // Line(Vec<>)
@@ -65,8 +65,8 @@ fn bold(line: &str) -> Option<Token> {
     both_edhes(&line, "**").and_then(|rest| Some(Token::Bold(rest)))
 }
 
-fn bar(line: &str) -> Option<Token> {
-    both_edhes(&line, "~~").and_then(|rest| Some(Token::Bar(rest)))
+fn strikethrough(line: &str) -> Option<Token> {
+    both_edhes(&line, "~~").and_then(|rest| Some(Token::Strikethrough(rest)))
 }
 
 fn link(line: &str) -> Option<Token> {
@@ -75,7 +75,7 @@ fn link(line: &str) -> Option<Token> {
 }
 
 pub fn parse(line: &str) -> Token {
-    let parsers = vec!(h3, h2, h1, hr, bold, italic, bar, link, word);
+    let parsers = vec!(h3, h2, h1, hr, bold, italic, strikethrough, link, word);
     let ret = parsers.iter().find_map(|f| f(line));
     ret.unwrap()
 }
@@ -120,9 +120,9 @@ mod tests {
     }
 
     #[test]
-    fn test_bar() {
+    fn test_strikethrough() {
         let test_word = "~~Hello World!~~";
-        assert_eq!(parse(&test_word), Token::Bar("Hello World!"));
+        assert_eq!(parse(&test_word), Token::Strikethrough("Hello World!"));
     }
 
     #[test]
