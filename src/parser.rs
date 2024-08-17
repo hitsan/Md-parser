@@ -28,14 +28,14 @@ fn heading(line: &str) -> Option<ParsedResult> {
     })
 }
 
-fn word(line: &str) -> Option<ParsedResult> {
+fn text(line: &str) -> Option<ParsedResult> {
     let li = line.to_string();
     let pr = ParsedResult::new(Md::Text(li), &"");
     Some(pr)
 }
 
 pub fn parse(line: &str) -> ParsedResult {
-    let parsers = vec!(heading, word);
+    let parsers = vec!(heading, text);
     let ret = parsers.iter().find_map(|f| f(line));
     ret.unwrap()
 }
