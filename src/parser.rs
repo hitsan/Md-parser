@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, String),
-    Words(String)
+    Text(String)
 }
 
 #[derive(Debug, PartialEq)]
@@ -30,7 +30,7 @@ fn heading(line: &str) -> Option<ParsedResult> {
 
 fn word(line: &str) -> Option<ParsedResult> {
     let li = line.to_string();
-    let pr = ParsedResult::new(Md::Words(li), &"");
+    let pr = ParsedResult::new(Md::Text(li), &"");
     Some(pr)
 }
 
@@ -48,7 +48,7 @@ mod tests {
     fn test_word() {
         let test_word = "Hello World!";
         let md_ans = "Hello World!".to_string();
-        assert_eq!(parse(&test_word), ParsedResult{ token: Md::Words(md_ans), rest: &""});
+        assert_eq!(parse(&test_word), ParsedResult{ token: Md::Text(md_ans), rest: &""});
     }
 
     #[test]
