@@ -18,13 +18,10 @@ impl<'a> ParsedResult<'a> {
 
 fn heading(line: &str) -> Option<ParsedResult> {
     ["# ", "## ", "### "].iter().enumerate().find_map(|p| {
-        if line.starts_with(p.1){
-            let word = line[(p.0+2)..].to_string();
-            let ret = ParsedResult::new(Md::Heading(p.0+1, word), &"");
-            Some(ret)          
-        } else {
-            None
-        }
+        if !line.starts_with(p.1) { return None }
+        let word = line[(p.0+2)..].to_string();
+        let ret = ParsedResult::new(Md::Heading(p.0+1, word), &"");
+        Some(ret)
     })
 }
 
