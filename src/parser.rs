@@ -36,13 +36,6 @@ fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
     // and_some
 }
 
-fn line(sentence: &str) -> Option<ParsedResult<Md>> {
-    let parsers = vec!(strike_though, bold, italic, text);
-    parsers.iter().find_map(|f| f(sentence).and_then(
-        |r| Some(ParsedResult::new(Md::Line(r.token), &""))
-    ))
-}
-
 fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     if !sentence.starts_with("*") { return None }
     sentence[1..].find("*").and_then(|n| {
@@ -61,6 +54,15 @@ fn bold(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     })
 }
 
+fn underline(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    if !sentence.starts_with("__") { return None }
+    sentence[2..].find("__").and_then(|n| {
+        let s = text(&sentence[2..(n+2)]).unwrap();
+        let ret = ParsedResult::new(Emphasis::Underline(Box::new(s.token)), &sentence[(n+4)..]);
+        Some(ret)
+    })
+}
+
 fn strike_though(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     if !sentence.starts_with("~~") { return None }
     sentence[2..].find("~~").and_then(|n| {
@@ -74,6 +76,13 @@ fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     let sentence = sentence.to_string();
     let ret = ParsedResult::new(Emphasis::Text(sentence), &"");
     Some(ret)
+}
+
+fn line(sentence: &str) -> Option<ParsedResult<Md>> {
+    let parsers = vec!(underline, strike_though, bold, italic, text);
+    parsers.iter().find_map(|f| f(sentence).and_then(
+        |r| Some(ParsedResult::new(Md::Line(r.token), &""))
+    ))
 }
 
 pub fn parse(sentence: &str) -> ParsedResult<Md> {
@@ -123,6 +132,14 @@ mod tests {
         let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
         let ans = parse(&test_word);
         assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::StrikeThough(md_ans)), rest: &""});
+    }
+
+    #[test]
+    fn test_underline() {
+        let test_word = "__Hello World!__";
+        let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let ans = parse(&test_word);
+        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Underline(md_ans)), rest: &""});
     }
 
     #[test]
