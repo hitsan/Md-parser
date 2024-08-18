@@ -7,7 +7,8 @@ pub enum Md {
 #[derive(Debug, PartialEq)]
 pub enum Emphasis {
     Text(String),
-    Italic(Box<Emphasis>)
+    Italic(Box<Emphasis>),
+    Bold(Box<Emphasis>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -44,6 +45,15 @@ fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     sentence[1..].find("*").and_then(|n| {
         let s = text(&sentence[1..(n+1)]).unwrap();
         let ret = ParsedResult::new(Emphasis::Italic(Box::new(s.token)), &sentence[(n+2)..]);
+        Some(ret)
+    })
+}
+
+fn bold(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    if !sentence.starts_with("**") { return None }
+    sentence[2..].find("**").and_then(|n| {
+        let s = text(&sentence[2..(n+2)]).unwrap();
+        let ret = ParsedResult::new(Emphasis::Bold(Box::new(s.token)), &sentence[(n+4)..]);
         Some(ret)
     })
 }
@@ -85,6 +95,14 @@ mod tests {
         let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
         let ans = italic(&test_word).unwrap();
         assert_eq!(ans, ParsedResult{ token: Emphasis::Italic(md_ans), rest: &""});
+    }
+
+    #[test]
+    fn test_bold() {
+        let test_word = "**Hello World!**";
+        let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let ans = bold(&test_word).unwrap();
+        assert_eq!(ans, ParsedResult{ token: Emphasis::Bold(md_ans), rest: &""});
     }
 
     #[test]
