@@ -11,7 +11,6 @@ pub enum Emphasis {
     Bold(Box<Emphasis>),
     StrikeThough(Box<Emphasis>),
     Underline(Box<Emphasis>),
-    Inline(Box<Emphasis>),
 }
 
 #[derive(Debug, PartialEq)]
