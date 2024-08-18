@@ -5,18 +5,18 @@ pub enum Md {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ParsedResult<'a, > {
-    token: Md,
+pub struct ParsedResult<'a, T> {
+    token: T,
     rest: &'a str,
 }
 
-impl<'a> ParsedResult<'a> {
-    pub fn new(token: Md, rest: &'a str) -> ParsedResult<'a> {
+impl<'a, T> ParsedResult<'a, T> {
+    pub fn new(token: T, rest: &'a str) -> ParsedResult<'a, T> {
         ParsedResult { token: token, rest: rest }
     }
 }
 
-fn heading(sentence: &str) -> Option<ParsedResult> {
+fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
     ["# ", "## ", "### "].iter().enumerate().find_map(|p| {
         if !sentence.starts_with(p.1) { return None }
         let word = sentence[(p.0+2)..].to_string();
@@ -25,13 +25,13 @@ fn heading(sentence: &str) -> Option<ParsedResult> {
     })
 }
 
-fn line(sentence: &str) -> Option<ParsedResult> {
+fn line(sentence: &str) -> Option<ParsedResult<Md>> {
     let li = sentence.to_string();
     let pr = ParsedResult::new(Md::Line(li), &"");
     Some(pr)
 }
 
-pub fn parse(sentence: &str) -> ParsedResult {
+pub fn parse(sentence: &str) -> ParsedResult<Md> {
     let parsers = vec!(heading, line);
     let ret = parsers.iter().find_map(|f| f(sentence));
     ret.unwrap()
