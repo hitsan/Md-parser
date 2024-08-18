@@ -9,6 +9,9 @@ pub enum Emphasis {
     Text(String),
     Italic(Box<Emphasis>),
     Bold(Box<Emphasis>),
+    StrikeThough(Box<Emphasis>),
+    Underline(Box<Emphasis>),
+    Inline(Box<Emphasis>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -34,7 +37,7 @@ fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
 }
 
 fn line(sentence: &str) -> Option<ParsedResult<Md>> {
-    let parsers = vec!(bold, italic, text);
+    let parsers = vec!(strike_though, bold, italic, text);
     parsers.iter().find_map(|f| f(sentence).and_then(
         |r| Some(ParsedResult::new(Md::Line(r.token), &""))
     ))
@@ -54,6 +57,15 @@ fn bold(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     sentence[2..].find("**").and_then(|n| {
         let s = text(&sentence[2..(n+2)]).unwrap();
         let ret = ParsedResult::new(Emphasis::Bold(Box::new(s.token)), &sentence[(n+4)..]);
+        Some(ret)
+    })
+}
+
+fn strike_though(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    if !sentence.starts_with("~~") { return None }
+    sentence[2..].find("~~").and_then(|n| {
+        let s = text(&sentence[2..(n+2)]).unwrap();
+        let ret = ParsedResult::new(Emphasis::StrikeThough(Box::new(s.token)), &sentence[(n+4)..]);
         Some(ret)
     })
 }
@@ -103,6 +115,14 @@ mod tests {
         let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
         let ans = parse(&test_word);
         assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Bold(md_ans)), rest: &""});
+    }
+
+    #[test]
+    fn test_strike_though() {
+        let test_word = "~~Hello World!~~";
+        let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let ans = parse(&test_word);
+        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::StrikeThough(md_ans)), rest: &""});
     }
 
     #[test]
