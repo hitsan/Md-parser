@@ -34,7 +34,7 @@ fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
 }
 
 fn line(sentence: &str) -> Option<ParsedResult<Md>> {
-    let parsers = vec!(italic, text);
+    let parsers = vec!(bold, italic, text);
     parsers.iter().find_map(|f| f(sentence).and_then(
         |r| Some(ParsedResult::new(Md::Line(r.token), &""))
     ))
@@ -85,24 +85,24 @@ mod tests {
     fn test_text() {
         let test_word = "Hello World!";
         let md_ans = "Hello World!".to_string();
-        let ans = text(&test_word).unwrap();
-        assert_eq!(ans, ParsedResult{ token: Emphasis::Text(md_ans), rest: &""});
+        let ans = parse(&test_word);
+        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Text(md_ans)), rest: &""});
     }
 
     #[test]
     fn test_italic() {
         let test_word = "*Hello World!*";
         let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let ans = italic(&test_word).unwrap();
-        assert_eq!(ans, ParsedResult{ token: Emphasis::Italic(md_ans), rest: &""});
+        let ans = parse(&test_word);
+        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Italic(md_ans)), rest: &""});
     }
 
     #[test]
     fn test_bold() {
         let test_word = "**Hello World!**";
         let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let ans = bold(&test_word).unwrap();
-        assert_eq!(ans, ParsedResult{ token: Emphasis::Bold(md_ans), rest: &""});
+        let ans = parse(&test_word);
+        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Bold(md_ans)), rest: &""});
     }
 
     #[test]
