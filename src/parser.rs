@@ -1,7 +1,12 @@
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, String),
-    Line(String)
+    Line(Emphasis)
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Emphasis {
+    Text(String)
 }
 
 #[derive(Debug, PartialEq)]
@@ -23,12 +28,19 @@ fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
         let ret = ParsedResult::new(Md::Heading(p.0+1, word), &"");
         Some(ret)
     })
+    // and_some
 }
 
 fn line(sentence: &str) -> Option<ParsedResult<Md>> {
-    let li = sentence.to_string();
-    let pr = ParsedResult::new(Md::Line(li), &"");
-    Some(pr)
+    text(sentence).map(|r| {
+        ParsedResult::new(Md::Line(r.token), &"")
+    })
+}
+
+fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    let sentence = sentence.to_string();
+    let ret = ParsedResult::new(Emphasis::Text(sentence), &"");
+    Some(ret)
 }
 
 pub fn parse(sentence: &str) -> ParsedResult<Md> {
@@ -42,10 +54,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_word() {
+    fn test_line() {
         let test_word = "Hello World!";
         let md_ans = "Hello World!".to_string();
+        let md_ans = Emphasis::Text(md_ans);
         assert_eq!(parse(&test_word), ParsedResult{ token: Md::Line(md_ans), rest: &""});
+    }
+
+    #[test]
+    fn test_text() {
+        let test_word = "Hello World!";
+        let md_ans = "Hello World!".to_string();
+        let ans = text(&test_word).unwrap();
+        assert_eq!(ans, ParsedResult{ token: Emphasis::Text(md_ans), rest: &""});
     }
 
     #[test]
