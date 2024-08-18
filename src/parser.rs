@@ -1,11 +1,11 @@
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, String),
-    Text(String)
+    Line(String)
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ParsedResult<'a> {
+pub struct ParsedResult<'a, > {
     token: Md,
     rest: &'a str,
 }
@@ -16,24 +16,24 @@ impl<'a> ParsedResult<'a> {
     }
 }
 
-fn heading(line: &str) -> Option<ParsedResult> {
+fn heading(sentence: &str) -> Option<ParsedResult> {
     ["# ", "## ", "### "].iter().enumerate().find_map(|p| {
-        if !line.starts_with(p.1) { return None }
-        let word = line[(p.0+2)..].to_string();
+        if !sentence.starts_with(p.1) { return None }
+        let word = sentence[(p.0+2)..].to_string();
         let ret = ParsedResult::new(Md::Heading(p.0+1, word), &"");
         Some(ret)
     })
 }
 
-fn text(line: &str) -> Option<ParsedResult> {
-    let li = line.to_string();
-    let pr = ParsedResult::new(Md::Text(li), &"");
+fn line(sentence: &str) -> Option<ParsedResult> {
+    let li = sentence.to_string();
+    let pr = ParsedResult::new(Md::Line(li), &"");
     Some(pr)
 }
 
-pub fn parse(line: &str) -> ParsedResult {
-    let parsers = vec!(heading, text);
-    let ret = parsers.iter().find_map(|f| f(line));
+pub fn parse(sentence: &str) -> ParsedResult {
+    let parsers = vec!(heading, line);
+    let ret = parsers.iter().find_map(|f| f(sentence));
     ret.unwrap()
 }
 
@@ -45,7 +45,7 @@ mod tests {
     fn test_word() {
         let test_word = "Hello World!";
         let md_ans = "Hello World!".to_string();
-        assert_eq!(parse(&test_word), ParsedResult{ token: Md::Text(md_ans), rest: &""});
+        assert_eq!(parse(&test_word), ParsedResult{ token: Md::Line(md_ans), rest: &""});
     }
 
     #[test]
