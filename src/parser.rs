@@ -1,82 +1,72 @@
 #[derive(Debug, PartialEq)]
-pub enum Token<'a> {
-    Hr,
-    H1(&'a str),
-    H2(&'a str),
-    H3(&'a str),
-    Word(&'a str),
-    Italic(&'a str),
-    Bold(&'a str),
-    Strikethrough(&'a str),
-    Link(&'a str),
-    // Line(Vec<Token<'a>, Box<Line>>),
-    // Line(Vec<>)
+pub enum Md {
+    Heading(usize, String),
+    Line(Emphasis)
 }
 
-fn start<'a>(line: &'a str, pattern: &'a str) -> Option<&'a str> {
-    if line.starts_with(pattern) {
-        let length = pattern.len();
-        let rest = &line[length..];
-        Some(rest)
-    } else {
-        None
+#[derive(Debug, PartialEq)]
+pub enum Emphasis {
+    Text(String),
+    Italic(Box<Emphasis>),
+    Bold(Box<Emphasis>),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ParsedResult<'a, T> {
+    token: T,
+    rest: &'a str,
+}
+
+impl<'a, T> ParsedResult<'a, T> {
+    pub fn new(token: T, rest: &'a str) -> ParsedResult<'a, T> {
+        ParsedResult { token: token, rest: rest }
     }
 }
 
-fn end<'a>(line: &'a str, pattern: &'a str) -> Option<&'a str> {
-    if line.ends_with(pattern) {
-        let length = line.len() - pattern.len();
-        let rest = &line[..length];
-        Some(rest)
-    } else {
-        None
-    }
+fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
+    ["# ", "## ", "### "].iter().enumerate().find_map(|p| {
+        if !sentence.starts_with(p.1) { return None }
+        let word = sentence[(p.0+2)..].to_string();
+        let ret = ParsedResult::new(Md::Heading(p.0+1, word), &"");
+        Some(ret)
+    })
+    // and_some
 }
 
-fn both_edhes<'a>(line: &'a str, pattern: &'a str) -> Option<&'a str> {
-    start(&line, pattern).and_then(|rest| end(rest, pattern))
+fn line(sentence: &str) -> Option<ParsedResult<Md>> {
+    let parsers = vec!(italic, text);
+    parsers.iter().find_map(|f| f(sentence).and_then(
+        |r| Some(ParsedResult::new(Md::Line(r.token), &""))
+    ))
 }
 
-fn word(line: &str) -> Option<Token> {
-    Some(Token::Word(&line))
+fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    if !sentence.starts_with("*") { return None }
+    sentence[1..].find("*").and_then(|n| {
+        let s = text(&sentence[1..(n+1)]).unwrap();
+        let ret = ParsedResult::new(Emphasis::Italic(Box::new(s.token)), &sentence[(n+2)..]);
+        Some(ret)
+    })
 }
 
-fn h1(line: &str) -> Option<Token> {
-    start(&line, "# ").and_then(|rest| Some(Token::H1(rest)))
+fn bold(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    if !sentence.starts_with("**") { return None }
+    sentence[2..].find("**").and_then(|n| {
+        let s = text(&sentence[2..(n+2)]).unwrap();
+        let ret = ParsedResult::new(Emphasis::Bold(Box::new(s.token)), &sentence[(n+4)..]);
+        Some(ret)
+    })
 }
 
-fn h2(line: &str) -> Option<Token> {
-    start(&line, "## ").and_then(|rest| Some(Token::H2(rest)))
+fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    let sentence = sentence.to_string();
+    let ret = ParsedResult::new(Emphasis::Text(sentence), &"");
+    Some(ret)
 }
 
-fn h3(line: &str) -> Option<Token> {
-    start(&line, "### ").and_then(|rest| Some(Token::H3(rest)))
-}
-
-fn hr(line: &str) -> Option<Token> {
-    if line == "---" { Some(Token::Hr) } else { None }
-}
-
-fn italic(line: &str) -> Option<Token> {
-    both_edhes(&line, "*").and_then(|rest| Some(Token::Italic(rest)))
-}
-
-fn bold(line: &str) -> Option<Token> {
-    both_edhes(&line, "**").and_then(|rest| Some(Token::Bold(rest)))
-}
-
-fn strikethrough(line: &str) -> Option<Token> {
-    both_edhes(&line, "~~").and_then(|rest| Some(Token::Strikethrough(rest)))
-}
-
-fn link(line: &str) -> Option<Token> {
-    let parsed_line = start(line, "<").and_then(|rest| end(rest, ">"));
-    parsed_line.and_then(|rest| Some(Token::Link(rest)))
-}
-
-pub fn parse(line: &str) -> Token {
-    let parsers = vec!(h3, h2, h1, hr, bold, italic, strikethrough, link, word);
-    let ret = parsers.iter().find_map(|f| f(line));
+pub fn parse(sentence: &str) -> ParsedResult<Md> {
+    let parsers = vec!(heading, line);
+    let ret = parsers.iter().find_map(|f| f(sentence));
     ret.unwrap()
 }
 
@@ -85,55 +75,41 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_word() {
+    fn test_line() {
         let test_word = "Hello World!";
-        assert_eq!(parse(&test_word), Token::Word("Hello World!"));
+        let md_ans = Emphasis::Text("Hello World!".to_string());
+        assert_eq!(parse(&test_word), ParsedResult{ token: Md::Line(md_ans), rest: &""});
     }
 
     #[test]
-    fn test_ends() {
+    fn test_text() {
         let test_word = "Hello World!";
-        let pattern = "!";
-        assert_eq!(end(&test_word, &pattern), Some("Hello World"));
-    }
-
-    #[test]
-    fn test_heading() {
-        let test_word = "# Hello World!";
-        assert_eq!(parse(&test_word), Token::H1("Hello World!"));
-        let test_word = "## Hello World!";
-        assert_eq!(parse(&test_word), Token::H2("Hello World!"));
-        let test_word = "### Hello World!";
-        assert_eq!(parse(&test_word), Token::H3("Hello World!"));
+        let md_ans = "Hello World!".to_string();
+        let ans = text(&test_word).unwrap();
+        assert_eq!(ans, ParsedResult{ token: Emphasis::Text(md_ans), rest: &""});
     }
 
     #[test]
     fn test_italic() {
         let test_word = "*Hello World!*";
-        assert_eq!(parse(&test_word), Token::Italic("Hello World!"));
+        let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let ans = italic(&test_word).unwrap();
+        assert_eq!(ans, ParsedResult{ token: Emphasis::Italic(md_ans), rest: &""});
     }
 
     #[test]
     fn test_bold() {
         let test_word = "**Hello World!**";
-        assert_eq!(parse(&test_word), Token::Bold("Hello World!"));
+        let md_ans = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let ans = bold(&test_word).unwrap();
+        assert_eq!(ans, ParsedResult{ token: Emphasis::Bold(md_ans), rest: &""});
     }
 
     #[test]
-    fn test_strikethrough() {
-        let test_word = "~~Hello World!~~";
-        assert_eq!(parse(&test_word), Token::Strikethrough("Hello World!"));
+    fn test_heading() {
+        let test_word = "# Hello World!";
+        let md_ans = "Hello World!".to_string();
+        assert_eq!(parse(&test_word), ParsedResult{ token: Md::Heading(1, md_ans), rest: &""});
     }
 
-    #[test]
-    fn test_link() {
-        let test_word = "<https://www.google.com>";
-        assert_eq!(parse(&test_word), Token::Link("https://www.google.com"));
-    }
-
-    #[test]
-    fn test_hr() {
-        let test_word = "---";
-        assert_eq!(parse(&test_word), Token::Hr);
-    }
 }
