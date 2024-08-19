@@ -103,47 +103,52 @@ mod tests {
     fn test_line() {
         let test_word = "Hello World!";
         let expectation = Emphasis::Text("Hello World!".to_string());
-        assert_eq!(parse(&test_word), ParsedResult{ token: Md::Line(expectation), rest: &""});
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
     }
 
     #[test]
     fn test_text() {
         let test_word = "Hello World!";
-        let expectation = "Hello World!".to_string();
-        let ans = parse(&test_word);
-        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Text(expectation)), rest: &""});
+        let expectation = Emphasis::Text("Hello World!".to_string());
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
     }
 
     #[test]
     fn test_italic() {
         let test_word = "*Hello World!*";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let ans = parse(&test_word);
-        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Italic(expectation)), rest: &""});
+        let expectation = Emphasis::Italic(expectation);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
     }
 
     #[test]
     fn test_bold() {
         let test_word = "**Hello World!**";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let ans = parse(&test_word);
-        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Bold(expectation)), rest: &""});
+        let expectation = Emphasis::Bold(expectation);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
     }
 
     #[test]
     fn test_strike_though() {
         let test_word = "~~Hello World!~~";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let ans = parse(&test_word);
-        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::StrikeThough(expectation)), rest: &""});
+        let expectation = Emphasis::StrikeThough(expectation);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
     }
 
     #[test]
     fn test_underline() {
         let test_word = "__Hello World!__";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let ans = parse(&test_word);
-        assert_eq!(ans, ParsedResult{ token: Md::Line(Emphasis::Underline(expectation)), rest: &""});
+        let expectation = Emphasis::Underline(expectation);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
     }
 
     #[test]
@@ -152,8 +157,23 @@ mod tests {
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
         let expectation = Box::new(Emphasis::Bold(expectation));
         let expectation = Emphasis::Underline(expectation);
-        let ans = parse(&test_word);
-        assert_eq!(ans, ParsedResult{ token: Md::Line(expectation), rest: &""});
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
+
+        let test_word = "**__Hello World!__**";
+        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let expectation = Box::new(Emphasis::Underline(expectation));
+        let expectation = Emphasis::Bold(expectation);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
+
+        let test_word = "~~**__Hello World!__**~~";
+        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let expectation = Box::new(Emphasis::Underline(expectation));
+        let expectation = Box::new(Emphasis::Bold(expectation));
+        let expectation = Emphasis::StrikeThough(expectation);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
     }
 
     #[test]
