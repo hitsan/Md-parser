@@ -35,40 +35,39 @@ fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
     // and_some
 }
 
-fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
-    if !sentence.starts_with("*") { return None }
-    sentence[1..].find("*").and_then(|n| {
-        let s = text(&sentence[1..(n+1)]).unwrap();
-        let ret = ParsedResult::new(Emphasis::Italic(Box::new(s.token)), &sentence[(n+2)..]);
-        Some(ret)
+fn emphasis<'a>(
+    sentence: &'a str,
+    pattern: &'a str,
+    em: &dyn Fn(Box<Emphasis>)->Emphasis
+) -> Option<ParsedResult<'a, Emphasis>> {
+    if !sentence.starts_with(pattern) { return None }
+    let len = pattern.len();
+    sentence[len..].find(pattern).and_then(|n| {
+        let s = text(&sentence[len..(n+len)]).unwrap();
+        let token = em(Box::new(s.token));
+        let rest = &sentence[(n+2*len)..];
+        Some(ParsedResult::new(token, rest))
     })
+}
+
+fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+    let em = |token| Emphasis::Italic(token);
+    emphasis(&sentence, "*", &em)
 }
 
 fn bold(sentence: &str) -> Option<ParsedResult<Emphasis>> {
-    if !sentence.starts_with("**") { return None }
-    sentence[2..].find("**").and_then(|n| {
-        let s = text(&sentence[2..(n+2)]).unwrap();
-        let ret = ParsedResult::new(Emphasis::Bold(Box::new(s.token)), &sentence[(n+4)..]);
-        Some(ret)
-    })
+    let em = |token| Emphasis::Bold(token);
+    emphasis(&sentence, "**", &em)
 }
 
 fn underline(sentence: &str) -> Option<ParsedResult<Emphasis>> {
-    if !sentence.starts_with("__") { return None }
-    sentence[2..].find("__").and_then(|n| {
-        let s = text(&sentence[2..(n+2)]).unwrap();
-        let ret = ParsedResult::new(Emphasis::Underline(Box::new(s.token)), &sentence[(n+4)..]);
-        Some(ret)
-    })
+    let em = |token| Emphasis::Underline(token);
+    emphasis(&sentence, "__", &em)
 }
 
 fn strike_though(sentence: &str) -> Option<ParsedResult<Emphasis>> {
-    if !sentence.starts_with("~~") { return None }
-    sentence[2..].find("~~").and_then(|n| {
-        let s = text(&sentence[2..(n+2)]).unwrap();
-        let ret = ParsedResult::new(Emphasis::StrikeThough(Box::new(s.token)), &sentence[(n+4)..]);
-        Some(ret)
-    })
+    let em = |token| Emphasis::StrikeThough(token);
+    emphasis(&sentence, "~~", &em)
 }
 
 fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
