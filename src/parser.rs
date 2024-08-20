@@ -35,20 +35,50 @@ fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
     // and_some
 }
 
+pub trait Parser {
+    fn consume(&self, pattern: &str) -> Option<&str>;
+}
+
+impl Parser for str {
+    fn consume(&self, pattern: &str) -> Option<&str> {
+        if !self.starts_with(pattern) { return None }
+        let length = pattern.len();
+        println!("sentense : {}", &self[length..]);
+        Some(&self[length..])
+    }
+}
+
 fn emphasis<'a>(
     sentence: &'a str,
     pattern: &'a str,
     em: &dyn Fn(Box<Emphasis>)->Emphasis
 ) -> Option<ParsedResult<'a, Emphasis>> {
-    if !sentence.starts_with(pattern) { return None }
-    let len = pattern.len();
-    sentence[len..].find(pattern).and_then(|n| {
-        let s = term(&sentence[len..(n+len)]).unwrap();
+    let ret = sentence.consume(pattern);
+    if ret.is_none() {return None}
+    let ret = ret.unwrap();
+    ret.find(pattern).and_then(|n| {
+        let len = pattern.len();
+        let s = term(&ret[..n]).unwrap();
         let token = em(Box::new(s.token));
-        let rest = &sentence[(n+2*len)..];
+        let rest = &ret[(n+len)..];
         Some(ParsedResult::new(token, rest))
     })
 }
+
+// fn emphasis<'a>(
+//     sentence: &'a str,
+//     pattern: &'a str,
+//     em: &dyn Fn(Box<Emphasis>)->Emphasis
+// ) -> Option<ParsedResult<'a, Emphasis>> {
+//     if !sentence.starts_with(pattern) { return None }
+//     let len = pattern.len();
+//     sentence[len..].find(pattern).and_then(|n| {
+//         let s = term(&sentence[len..(n+len)]).unwrap();
+//         let token = em(Box::new(s.token));
+//         let rest = &sentence[(n+2*len)..];
+//         Some(ParsedResult::new(token, rest))
+//     })
+// }
 
 fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     let em = |token| Emphasis::Italic(token);
