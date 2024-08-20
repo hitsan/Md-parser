@@ -43,7 +43,6 @@ impl Parser for str {
     fn consume(&self, pattern: &str) -> Option<&str> {
         if !self.starts_with(pattern) { return None }
         let length = pattern.len();
-        println!("sentense : {}", &self[length..]);
         Some(&self[length..])
     }
 }
@@ -53,15 +52,13 @@ fn emphasis<'a>(
     pattern: &'a str,
     em: &dyn Fn(Box<Emphasis>)->Emphasis
 ) -> Option<ParsedResult<'a, Emphasis>> {
-    let ret = sentence.consume(pattern);
-    if ret.is_none() {return None}
-    let ret = ret.unwrap();
+    let ret = sentence.consume(pattern)?;
     ret.find(pattern).and_then(|n| {
-        let len = pattern.len();
-        let s = term(&ret[..n]).unwrap();
-        let token = em(Box::new(s.token));
-        let rest = &ret[(n+len)..];
-        Some(ParsedResult::new(token, rest))
+        term(&ret[..n]).and_then(|s| {
+            let token = em(Box::new(s.token));
+            let rest = &s.rest;
+            Some(ParsedResult::new(token, rest))
+        })
     })
 }
 
@@ -101,9 +98,21 @@ fn strike_though(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 }
 
 fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
-    let sentence = sentence.to_string();
-    let ret = ParsedResult::new(Emphasis::Text(sentence), &"");
-    Some(ret)
+    let ret = ["~~", "__", "**", "*"].iter().find_map(|p| {
+        sentence.find(p).and_then(|n| {
+            let token = sentence[..n].to_string();
+            let rest = &sentence[n..];
+            Some(ParsedResult::new(Emphasis::Text(token), rest))  
+        })
+    });
+    match ret {
+        Some(n) => Some(n),
+        None => {
+            let token = Emphasis::Text(sentence.to_string());
+            let rest = &"";
+            Some(ParsedResult::new(token, rest))
+        }
+    }
 }
 
 fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
@@ -204,6 +213,17 @@ mod tests {
         let expectation = Emphasis::StrikeThough(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: &""});
+    }
+
+    #[test]
+    fn test_text_fun() {
+        let test_word = "Hello **World!**";
+        let expectation = Emphasis::Text("Hello ".to_string());
+        assert_eq!(text(&test_word), Some(ParsedResult{ token: expectation, rest: &"**World!**"}));
+
+        let test_word = "Hello **World!";
+        let expectation = Emphasis::Text("Hello ".to_string());
+        assert_eq!(text(&test_word), Some(ParsedResult{ token: expectation, rest: &"**World!"}));
     }
 
     #[test]
