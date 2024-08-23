@@ -56,21 +56,6 @@ fn emphasis<'a>(
     })
 }
 
-// fn emphasis<'a>(
-//     sentence: &'a str,
-//     pattern: &'a str,
-//     em: &dyn Fn(Box<Emphasis>)->Emphasis
-// ) -> Option<ParsedResult<'a, Emphasis>> {
-//     if !sentence.starts_with(pattern) { return None }
-//     let len = pattern.len();
-//     sentence[len..].find(pattern).and_then(|n| {
-//         let s = term(&sentence[len..(n+len)]).unwrap();
-//         let token = em(Box::new(s.token));
-//         let rest = &sentence[(n+2*len)..];
-//         Some(ParsedResult::new(token, rest))
-//     })
-// }
-
 fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     let em = |token| Emphasis::Italic(token);
     emphasis(&sentence, "*", &em)
