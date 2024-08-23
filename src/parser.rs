@@ -47,13 +47,9 @@ fn emphasis<'a>(
     em: &dyn Fn(Vec<Emphasis>)->Emphasis
 ) -> Option<ParsedResult<'a, Emphasis>> {
     let ret = consume(sentence, pattern)?;
-    ret.find(pattern).and_then(|n| {
-        term(&ret[..n]).and_then(|s| {
-            let token = em(vec!(s.token));
-            let rest = &s.rest;
-            Some(ParsedResult::new(token, rest))
-        })
-    })
+    let tem = term(ret)?;
+    let a = consume(tem.rest, pattern)?;
+    Some(ParsedResult::new(em(vec!(tem.token)), a))
 }
 
 fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
@@ -77,16 +73,26 @@ fn strike_though(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 }
 
 fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
-    ["~~", "__", "**", "*"].iter().find_map(|p| {
-        sentence.find(p).and_then(|n| {
+    let keywords = ["~~", "__", "**", "*"];
+    let a = keywords.iter().find_map(|k| {
+        if !sentence.starts_with(k) { return None }
+        let len = k.len();
+        Some(ParsedResult::new(Emphasis::Text(k.to_string()), &sentence[len..]))
+    });
+    if a.is_some() {return a }
+
+    let indexs = ["~~", "__", "**", "*"].iter().filter_map(|p| sentence.find(p));
+    match indexs.min() {
+        Some(n) => {
             let token = &sentence[..n];
             let rest = &sentence[n..];
-            Some(ParsedResult::new(Emphasis::Text(token.to_string()), rest))  
-        })
-    }).or_else(||{
-        let token = Emphasis::Text(sentence.to_string());
-        Some(ParsedResult::new(token,  ""))
-    })
+            Some(ParsedResult::new(Emphasis::Text(token.to_string()), rest))
+        },
+        None => {
+            let token = Emphasis::Text(sentence.to_string());
+            Some(ParsedResult::new(token,  ""))
+        }
+    }
 }
 
 fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
@@ -205,17 +211,6 @@ mod tests {
     }
 
     #[test]
-    fn test_text_fun() {
-        let test_word = "Hello **World!**";
-        let expectation = Emphasis::Text("Hello ".to_string());
-        assert_eq!(text(&test_word), Some(ParsedResult{ token: expectation, rest: "**World!**"}));
-
-        let test_word = "Hello **World!";
-        let expectation = Emphasis::Text("Hello ".to_string());
-        assert_eq!(text(&test_word), Some(ParsedResult{ token: expectation, rest: "**World!"}));
-    }
-
-    #[test]
     fn test_text_vec() {
         let test_word = "Hello **World!**";
         let hello = Emphasis::Text("Hello ".to_string());
@@ -225,12 +220,13 @@ mod tests {
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
 
-        // let test_word = "Hello **World!";
-        // let hello = Emphasis::Text("Hello ".to_string());
-        // let world = Emphasis::Text("**World!".to_string());
-        // let expectation = vec!(hello, world);
-        // let expectation = Md::Line(expectation);
-        // assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
+        let test_word = "Hello **World!";
+        let hello = Emphasis::Text("Hello ".to_string());
+        let ast = Emphasis::Text("**".to_string());
+        let world = Emphasis::Text("World!".to_string());
+        let expectation = vec!(hello, ast, world);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
 
     #[test]
