@@ -97,9 +97,15 @@ fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 }
 
 fn line(sentence: &str) -> Option<ParsedResult<Md>> {
-    term(sentence).and_then(
-        |r| Some(ParsedResult::new(Md::Line(vec!(r.token)), &r.rest))
-    )
+    let ret = term(sentence)?;
+    let mut tokens = vec!(ret.token);
+    let mut rest = ret.rest;
+    while rest != "" {
+        let ret = term(&rest)?;
+        tokens.push(ret.token);
+        rest = ret.rest;
+    }
+    Some(ParsedResult::new(Md::Line(tokens), &rest))
 }
 
 pub fn parse(sentence: &str) -> ParsedResult<Md> {
@@ -207,6 +213,24 @@ mod tests {
         let test_word = "Hello **World!";
         let expectation = Emphasis::Text("Hello ".to_string());
         assert_eq!(text(&test_word), Some(ParsedResult{ token: expectation, rest: "**World!"}));
+    }
+
+    #[test]
+    fn test_text_vec() {
+        let test_word = "Hello **World!**";
+        let hello = Emphasis::Text("Hello ".to_string());
+        let world = Emphasis::Text("World!".to_string());
+        let world = Emphasis::Bold(vec!(world));
+        let expectation = vec!(hello, world);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
+
+        // let test_word = "Hello **World!";
+        // let hello = Emphasis::Text("Hello ".to_string());
+        // let world = Emphasis::Text("**World!".to_string());
+        // let expectation = vec!(hello, world);
+        // let expectation = Md::Line(expectation);
+        // assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
 
     #[test]
