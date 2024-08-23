@@ -35,16 +35,10 @@ fn heading(sentence: &str) -> Option<ParsedResult<Md>> {
     // and_some
 }
 
-pub trait Parser {
-    fn consume(&self, pattern: &str) -> Option<&str>;
-}
-
-impl Parser for str {
-    fn consume(&self, pattern: &str) -> Option<&str> {
-        if !self.starts_with(pattern) { return None }
-        let length = pattern.len();
-        Some(&self[length..])
-    }
+fn consume<'a>(sentence: &'a str, pattern: &'a str) -> Option<&'a str> {
+    if !sentence.starts_with(pattern) { return None }
+    let length = pattern.len();
+    Some(&sentence[length..])
 }
 
 fn emphasis<'a>(
@@ -52,7 +46,7 @@ fn emphasis<'a>(
     pattern: &'a str,
     em: &dyn Fn(Box<Emphasis>)->Emphasis
 ) -> Option<ParsedResult<'a, Emphasis>> {
-    let ret = sentence.consume(pattern)?;
+    let ret = consume(sentence, pattern)?;
     ret.find(pattern).and_then(|n| {
         term(&ret[..n]).and_then(|s| {
             let token = em(Box::new(s.token));
