@@ -7,10 +7,10 @@ pub enum Md {
 #[derive(Debug, PartialEq)]
 pub enum Emphasis {
     Text(String),
-    Italic(Box<Emphasis>),
-    Bold(Box<Emphasis>),
-    StrikeThough(Box<Emphasis>),
-    Underline(Box<Emphasis>),
+    Italic(Vec<Emphasis>),
+    Bold(Vec<Emphasis>),
+    StrikeThough(Vec<Emphasis>),
+    Underline(Vec<Emphasis>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -44,12 +44,12 @@ fn consume<'a>(sentence: &'a str, pattern: &'a str) -> Option<&'a str> {
 fn emphasis<'a>(
     sentence: &'a str,
     pattern: &'a str,
-    em: &dyn Fn(Box<Emphasis>)->Emphasis
+    em: &dyn Fn(Vec<Emphasis>)->Emphasis
 ) -> Option<ParsedResult<'a, Emphasis>> {
     let ret = consume(sentence, pattern)?;
     ret.find(pattern).and_then(|n| {
         term(&ret[..n]).and_then(|s| {
-            let token = em(Box::new(s.token));
+            let token = em(vec!(s.token));
             let rest = &s.rest;
             Some(ParsedResult::new(token, rest))
         })
@@ -133,7 +133,7 @@ mod tests {
     #[test]
     fn test_italic() {
         let test_word = "*Hello World!*";
-        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::Italic(expectation);
         let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
@@ -143,7 +143,7 @@ mod tests {
     #[test]
     fn test_bold() {
         let test_word = "**Hello World!**";
-        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::Bold(expectation);
         let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn test_strike_though() {
         let test_word = "~~Hello World!~~";
-        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::StrikeThough(expectation);
         let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn test_underline() {
         let test_word = "__Hello World!__";
-        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::Underline(expectation);
         let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
@@ -173,25 +173,25 @@ mod tests {
     #[test]
     fn test_mix() {
         let test_word = "__**Hello World!**__";
-        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let expectation = Box::new(Emphasis::Bold(expectation));
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Emphasis::Bold(expectation));
         let expectation = Emphasis::Underline(expectation);
         let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
 
         let test_word = "**__Hello World!__**";
-        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let expectation = Box::new(Emphasis::Underline(expectation));
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Emphasis::Underline(expectation));
         let expectation = Emphasis::Bold(expectation);
         let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
 
         let test_word = "~~**__Hello World!__**~~";
-        let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
-        let expectation = Box::new(Emphasis::Underline(expectation));
-        let expectation = Box::new(Emphasis::Bold(expectation));
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Emphasis::Underline(expectation));
+        let expectation = vec!(Emphasis::Bold(expectation));
         let expectation = Emphasis::StrikeThough(expectation);
         let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
