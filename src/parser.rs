@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, String),
-    Line(Emphasis)
+    Line(Vec<Emphasis>)
 }
 
 #[derive(Debug, PartialEq)]
@@ -98,7 +98,7 @@ fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 
 fn line(sentence: &str) -> Option<ParsedResult<Md>> {
     term(sentence).and_then(
-        |r| Some(ParsedResult::new(Md::Line(r.token), &r.rest))
+        |r| Some(ParsedResult::new(Md::Line(vec!(r.token)), &r.rest))
     )
 }
 
@@ -116,6 +116,7 @@ mod tests {
     fn test_line() {
         let test_word = "Hello World!";
         let expectation = Emphasis::Text("Hello World!".to_string());
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
@@ -124,6 +125,7 @@ mod tests {
     fn test_text() {
         let test_word = "Hello World!";
         let expectation = Emphasis::Text("Hello World!".to_string());
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
@@ -133,6 +135,7 @@ mod tests {
         let test_word = "*Hello World!*";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::Italic(expectation);
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
@@ -142,6 +145,7 @@ mod tests {
         let test_word = "**Hello World!**";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::Bold(expectation);
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
@@ -151,6 +155,7 @@ mod tests {
         let test_word = "~~Hello World!~~";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::StrikeThough(expectation);
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
@@ -160,6 +165,7 @@ mod tests {
         let test_word = "__Hello World!__";
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
         let expectation = Emphasis::Underline(expectation);
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
@@ -170,6 +176,7 @@ mod tests {
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
         let expectation = Box::new(Emphasis::Bold(expectation));
         let expectation = Emphasis::Underline(expectation);
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
 
@@ -177,6 +184,7 @@ mod tests {
         let expectation = Box::new(Emphasis::Text("Hello World!".to_string()));
         let expectation = Box::new(Emphasis::Underline(expectation));
         let expectation = Emphasis::Bold(expectation);
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
 
@@ -185,6 +193,7 @@ mod tests {
         let expectation = Box::new(Emphasis::Underline(expectation));
         let expectation = Box::new(Emphasis::Bold(expectation));
         let expectation = Emphasis::StrikeThough(expectation);
+        let expectation = vec!(expectation);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
