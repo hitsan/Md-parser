@@ -1,6 +1,6 @@
 #[derive(Debug, PartialEq)]
 pub enum Md {
-    Heading(usize, String),
+    Heading(usize, Vec<Emphasis>),
     Line(Vec<Emphasis>)
 }
 
@@ -28,8 +28,9 @@ impl<'a, T> ParsedResult<'a, T> {
 fn heading(sentence: &str) -> Option<Md> {
     ["# ", "## ", "### "].iter().enumerate().find_map(|p| {
         if !sentence.starts_with(p.1) { return None }
-        let word = &sentence[(p.0+2)..];
-        let ret = Md::Heading(p.0+1, word.to_string());
+        let sentence = &sentence[(p.0+2)..];
+        let token = terms(&sentence);
+        let ret = Md::Heading(p.0+1, token);
         Some(ret)
     })
     // and_some
@@ -280,7 +281,7 @@ mod tests {
     #[test]
     fn test_heading() {
         let test_word = "# Hello World!";
-        let expectation = "Hello World!".to_string();
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
         assert_eq!(parse(&test_word), Md::Heading(1, expectation));
     }
 
