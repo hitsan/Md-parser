@@ -46,8 +46,8 @@ fn emphasis<'a>(
     pattern: &'a str,
     em: &dyn Fn(Vec<Emphasis>)->Emphasis
 ) -> Option<ParsedResult<'a, Emphasis>> {
-    let ret = consume(sentence, pattern)?;
-    let tem = term(ret)?;
+    let sentence = consume(sentence, pattern)?;
+    let tem = term(sentence)?;
     let a = consume(tem.rest, pattern)?;
     Some(ParsedResult::new(em(vec!(tem.token)), a))
 }
@@ -59,6 +59,7 @@ fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 
 fn bold(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     let em = |token| Emphasis::Bold(token);
+    println!("{}", &sentence);
     emphasis(&sentence, "**", &em)
 }
 
@@ -225,6 +226,39 @@ mod tests {
         let ast = Emphasis::Text("**".to_string());
         let world = Emphasis::Text("World!".to_string());
         let expectation = vec!(hello, ast, world);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
+    }
+
+    #[test]
+    fn test_text_abnormal() {
+        let test_word = "Hello ****World!";
+        let hello = Emphasis::Text("Hello ".to_string());
+        let ast = Emphasis::Text("**".to_string());
+        let ita = Emphasis::Italic(vec!(ast));
+        let world = Emphasis::Text("World!".to_string());
+        let expectation = vec!(hello, ita, world);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
+
+        let test_word = "Hello **~~World!";
+        let hello = Emphasis::Text("Hello ".to_string());
+        let ast = Emphasis::Text("**".to_string());
+        let strike = Emphasis::Text("~~".to_string());
+        let world = Emphasis::Text("World!".to_string());
+        let expectation = vec!(hello, ast, strike, world);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
+    }
+    #[test]
+    fn test_text_abno() {
+        let test_word = "Hello **~~World!**";
+        let hello = Emphasis::Text("Hello ".to_string());
+        // let ast = Emphasis::Text("**".to_string());
+        let strike = Emphasis::Text("~~".to_string());
+        let world = Emphasis::Text("World!".to_string());
+        let bo = Emphasis::Bold(vec!(strike, world));
+        let expectation = vec!(hello, bo);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), ParsedResult{ token: expectation, rest: ""});
     }
