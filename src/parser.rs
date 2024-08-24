@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, Vec<Emphasis>),
-    Line(Vec<Emphasis>)
+    Line(Vec<Emphasis>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -47,11 +47,11 @@ fn consume<'a>(sentence: &'a str, pattern: &'a str) -> Option<&'a str> {
 }
 
 fn terms(sentence: &str) -> Vec<Emphasis> {
-    let token = term(&sentence).unwrap();
+    let token = term(&sentence);
     let mut rest = token.rest;
     let mut tokens = vec!(token.token);
-    while rest != "" {
-        let ret = term(&rest).unwrap();
+    while !rest.is_empty() {
+        let ret = term(&rest);
         tokens.push(ret.token);
         rest = ret.rest;
     }
@@ -110,11 +110,17 @@ fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     Some(ParsedResult::new(token,  ""))
 }
 
-fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+fn term(sentence: &str) -> ParsedResult<Emphasis> {
     let parsers = vec!(underline, strike_though, bold, italic, text);
-    parsers.iter().find_map(|f| f(sentence).and_then(
-        |r| Some(ParsedResult::new(r.token, &r.rest))
-    ))
+    let parsed_ret = parsers.iter().find_map(|f| {
+        f(sentence).and_then(
+            |r| Some(ParsedResult::new(r.token, &r.rest))
+       )}
+    );
+    match parsed_ret {
+        Some(ret) => ret,
+        _ => panic!("parse err!")
+    }
 }
 
 fn line(sentence: &str) -> Option<Md> {
