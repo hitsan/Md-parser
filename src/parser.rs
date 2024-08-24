@@ -255,14 +255,23 @@ mod tests {
         let expectation = vec!(hello, ast, strike, world);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), expectation);
-    }
-    #[test]
-    fn test_text_abno() {
+
         let test_word = "Hello **~~World!**";
         let hello = Emphasis::Text("Hello ".to_string());
         let strike = Emphasis::Text("~~".to_string());
         let world = Emphasis::Text("World!".to_string());
         let bo = Emphasis::Bold(vec!(strike, world));
+        let expectation = vec!(hello, bo);
+        let expectation = Md::Line(expectation);
+        assert_eq!(parse(&test_word), expectation);
+
+        let test_word = "Hello **~~Wor__ld!__**";
+        let hello = Emphasis::Text("Hello ".to_string());
+        let strike = Emphasis::Text("~~".to_string());
+        let wor = Emphasis::Text("Wor".to_string());
+        let ld = Emphasis::Text("ld!".to_string());
+        let un = Emphasis::Underline(vec!(ld));
+        let bo = Emphasis::Bold(vec!(strike, wor, un));
         let expectation = vec!(hello, bo);
         let expectation = Md::Line(expectation);
         assert_eq!(parse(&test_word), expectation);
