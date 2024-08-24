@@ -41,6 +41,18 @@ fn consume<'a>(sentence: &'a str, pattern: &'a str) -> Option<&'a str> {
     Some(&sentence[length..])
 }
 
+fn terms(sentence: &str) -> Vec<Emphasis> {
+    let token = term(&sentence).unwrap();
+    let mut rest = token.rest;
+    let mut tokens = vec!(token.token);
+    while rest != "" {
+        let ret = term(&rest).unwrap();
+        tokens.push(ret.token);
+        rest = ret.rest;
+    }
+    tokens
+}
+
 fn emphasis<'a>(
     sentence: &'a str,
     pattern: &'a str,
@@ -49,16 +61,9 @@ fn emphasis<'a>(
     let sentence = consume(sentence, pattern)?;
     let index = sentence.find(pattern)?;
     if index == 0 { return  None }
-    let ret = term(&sentence[..index])?;
+    let tokens = terms(&sentence[..index]);
     let len = pattern.len();
-    let mut rest = ret.rest;
-    let mut token = vec!(ret.token);
-    while rest != "" {
-        let ret = term(&rest)?;
-        token.push(ret.token);
-        rest = ret.rest;
-    }
-    Some(ParsedResult::new(em(token), &sentence[(index+len)..]))
+    Some(ParsedResult::new(em(tokens), &sentence[(index+len)..]))
 }
 
 fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
@@ -111,15 +116,8 @@ fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 }
 
 fn line(sentence: &str) -> Option<ParsedResult<Md>> {
-    let ret = term(sentence)?;
-    let mut tokens = vec!(ret.token);
-    let mut rest = ret.rest;
-    while rest != "" {
-        let ret = term(&rest)?;
-        tokens.push(ret.token);
-        rest = ret.rest;
-    }
-    Some(ParsedResult::new(Md::Line(tokens), &rest))
+    let tokens = terms(&sentence);
+    Some(ParsedResult::new(Md::Line(tokens), ""))
 }
 
 pub fn parse(sentence: &str) -> ParsedResult<Md> {
