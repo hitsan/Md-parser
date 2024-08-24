@@ -47,9 +47,17 @@ fn emphasis<'a>(
     em: &dyn Fn(Vec<Emphasis>)->Emphasis
 ) -> Option<ParsedResult<'a, Emphasis>> {
     let sentence = consume(sentence, pattern)?;
-    let tem = term(sentence)?;
-    let a = consume(tem.rest, pattern)?;
-    Some(ParsedResult::new(em(vec!(tem.token)), a))
+    let index = sentence.find(pattern)?;
+    if index == 0 {
+        let token = Emphasis::Text(pattern.to_string());
+        return Some(ParsedResult::new(token, sentence))
+    }
+    let ret = term(&sentence[..index])?;
+    let len = pattern.len();
+    let rest = &sentence[(index+len)..];
+    // let tem = term(sentence)?;
+    // let a = consume(tem.rest, pattern)?;
+    Some(ParsedResult::new(em(vec!(ret.token)), rest))
 }
 
 fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
@@ -59,7 +67,6 @@ fn italic(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 
 fn bold(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     let em = |token| Emphasis::Bold(token);
-    println!("{}", &sentence);
     emphasis(&sentence, "**", &em)
 }
 
