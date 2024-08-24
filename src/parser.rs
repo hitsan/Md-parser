@@ -93,24 +93,21 @@ fn strike_though(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 
 fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     let keywords = ["~~", "__", "**", "*"];
-    let ret = keywords.iter().find_map(|k| {
+    let matched_prefix = keywords.iter().find_map(|k| {
         let sentence = consume(sentence, k)?;
         Some(ParsedResult::new(Emphasis::Text(k.to_string()), &sentence))
     });
-    if ret.is_some() {return ret}
-
-    let indexs = ["~~", "__", "**", "*"].iter().filter_map(|p| sentence.find(p));
-    match indexs.min() {
-        Some(n) => {
-            let token = &sentence[..n];
-            let rest = &sentence[n..];
-            Some(ParsedResult::new(Emphasis::Text(token.to_string()), rest))
-        },
-        None => {
-            let token = Emphasis::Text(sentence.to_string());
-            Some(ParsedResult::new(token,  ""))
-        }
+    if let Some(ret) = matched_prefix {
+        return Some(ret)
     }
+    let indexs = keywords.iter().filter_map(|p| sentence.find(p));
+    if let Some(n) = indexs.min() {
+        let token = &sentence[..n];
+        let rest = &sentence[n..];
+        return Some(ParsedResult::new(Emphasis::Text(token.to_string()), rest))
+    }
+    let token = Emphasis::Text(sentence.to_string());
+    Some(ParsedResult::new(token,  ""))
 }
 
 fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
