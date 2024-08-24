@@ -25,15 +25,19 @@ impl<'a, T> ParsedResult<'a, T> {
     }
 }
 
+fn space(sentence: &str) -> Option<&str> {
+    let sentence = consume(sentence, " ")?;
+    Some(sentence.trim_start())
+}
+
 fn heading(sentence: &str) -> Option<Md> {
-    ["# ", "## ", "### "].iter().enumerate().find_map(|p| {
-        if !sentence.starts_with(p.1) { return None }
-        let sentence = &sentence[(p.0+2)..];
-        let token = terms(&sentence);
-        let ret = Md::Heading(p.0+1, token);
+    ["#", "##", "###"].iter().find_map(|p| {
+        let sentence = consume(sentence, p)?;
+        let sentence = space(sentence)?;
+        let tokens = terms(&sentence);
+        let ret = Md::Heading(p.len(), tokens);
         Some(ret)
     })
-    // and_some
 }
 
 fn consume<'a>(sentence: &'a str, pattern: &'a str) -> Option<&'a str> {
@@ -283,6 +287,18 @@ mod tests {
         let test_word = "# Hello World!";
         let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
         assert_eq!(parse(&test_word), Md::Heading(1, expectation));
+
+        let test_word = "#    Hello World!";
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        assert_eq!(parse(&test_word), Md::Heading(1, expectation));
+
+        let test_word = "## Hello World!";
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        assert_eq!(parse(&test_word), Md::Heading(2, expectation));
+
+        let test_word = "### Hello World!";
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        assert_eq!(parse(&test_word), Md::Heading(3, expectation));
     }
 
 }
