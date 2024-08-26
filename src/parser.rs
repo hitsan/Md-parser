@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, Vec<Emphasis>),
-    Line(Vec<Emphasis>)
+    Line(Vec<Emphasis>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -25,15 +25,19 @@ impl<'a, T> ParsedResult<'a, T> {
     }
 }
 
+fn space(sentence: &str) -> Option<&str> {
+    let sentence = consume(sentence, " ")?;
+    Some(sentence.trim_start())
+}
+
 fn heading(sentence: &str) -> Option<Md> {
-    ["# ", "## ", "### "].iter().enumerate().find_map(|p| {
-        if !sentence.starts_with(p.1) { return None }
-        let sentence = &sentence[(p.0+2)..];
-        let token = terms(&sentence);
-        let ret = Md::Heading(p.0+1, token);
+    ["#", "##", "###"].iter().find_map(|p| {
+        let sentence = consume(sentence, p)?;
+        let sentence = space(sentence)?;
+        let tokens = terms(&sentence);
+        let ret = Md::Heading(p.len(), tokens);
         Some(ret)
     })
-    // and_some
 }
 
 fn consume<'a>(sentence: &'a str, pattern: &'a str) -> Option<&'a str> {
@@ -43,11 +47,11 @@ fn consume<'a>(sentence: &'a str, pattern: &'a str) -> Option<&'a str> {
 }
 
 fn terms(sentence: &str) -> Vec<Emphasis> {
-    let token = term(&sentence).unwrap();
+    let token = term(&sentence);
     let mut rest = token.rest;
     let mut tokens = vec!(token.token);
-    while rest != "" {
-        let ret = term(&rest).unwrap();
+    while !rest.is_empty() {
+        let ret = term(&rest);
         tokens.push(ret.token);
         rest = ret.rest;
     }
@@ -89,31 +93,34 @@ fn strike_though(sentence: &str) -> Option<ParsedResult<Emphasis>> {
 
 fn text(sentence: &str) -> Option<ParsedResult<Emphasis>> {
     let keywords = ["~~", "__", "**", "*"];
-    let ret = keywords.iter().find_map(|k| {
+    let matched_prefix = keywords.iter().find_map(|k| {
         let sentence = consume(sentence, k)?;
         Some(ParsedResult::new(Emphasis::Text(k.to_string()), &sentence))
     });
-    if ret.is_some() {return ret}
-
-    let indexs = ["~~", "__", "**", "*"].iter().filter_map(|p| sentence.find(p));
-    match indexs.min() {
-        Some(n) => {
-            let token = &sentence[..n];
-            let rest = &sentence[n..];
-            Some(ParsedResult::new(Emphasis::Text(token.to_string()), rest))
-        },
-        None => {
-            let token = Emphasis::Text(sentence.to_string());
-            Some(ParsedResult::new(token,  ""))
-        }
+    if let Some(ret) = matched_prefix {
+        return Some(ret)
     }
+    let indexs = keywords.iter().filter_map(|p| sentence.find(p));
+    if let Some(n) = indexs.min() {
+        let token = &sentence[..n];
+        let rest = &sentence[n..];
+        return Some(ParsedResult::new(Emphasis::Text(token.to_string()), rest))
+    }
+    let token = Emphasis::Text(sentence.to_string());
+    Some(ParsedResult::new(token,  ""))
 }
 
-fn term(sentence: &str) -> Option<ParsedResult<Emphasis>> {
+fn term(sentence: &str) -> ParsedResult<Emphasis> {
     let parsers = vec!(underline, strike_though, bold, italic, text);
-    parsers.iter().find_map(|f| f(sentence).and_then(
-        |r| Some(ParsedResult::new(r.token, &r.rest))
-    ))
+    let parsed_ret = parsers.iter().find_map(|f| {
+        f(sentence).and_then(
+            |r| Some(ParsedResult::new(r.token, &r.rest))
+       )}
+    );
+    match parsed_ret {
+        Some(ret) => ret,
+        _ => panic!("parse err!")
+    }
 }
 
 fn line(sentence: &str) -> Option<Md> {
@@ -283,6 +290,18 @@ mod tests {
         let test_word = "# Hello World!";
         let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
         assert_eq!(parse(&test_word), Md::Heading(1, expectation));
+
+        let test_word = "#    Hello World!";
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        assert_eq!(parse(&test_word), Md::Heading(1, expectation));
+
+        let test_word = "## Hello World!";
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        assert_eq!(parse(&test_word), Md::Heading(2, expectation));
+
+        let test_word = "### Hello World!";
+        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        assert_eq!(parse(&test_word), Md::Heading(3, expectation));
     }
 
 }
