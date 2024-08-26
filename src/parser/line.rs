@@ -1,14 +1,5 @@
 use crate::parser::parser::*;
 
-#[derive(Debug, PartialEq)]
-pub enum Emphasis {
-    Text(String),
-    Italic(Vec<Emphasis>),
-    Bold(Vec<Emphasis>),
-    StrikeThough(Vec<Emphasis>),
-    Underline(Vec<Emphasis>),
-}
-
 fn emphasis<'a>(
     sentence: &'a str,
     pattern: &'a str,

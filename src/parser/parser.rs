@@ -1,10 +1,19 @@
 use super::heading::heading;
-use super::line::{line, Emphasis};
+use super::line::line;
 
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, Vec<Emphasis>),
     Line(Vec<Emphasis>),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Emphasis {
+    Text(String),
+    Italic(Vec<Emphasis>),
+    Bold(Vec<Emphasis>),
+    StrikeThough(Vec<Emphasis>),
+    Underline(Vec<Emphasis>),
 }
 
 #[derive(Debug, PartialEq, Clone)]
