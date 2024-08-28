@@ -5,7 +5,14 @@ use super::line::line;
 pub enum Md {
     Heading(usize, Vec<Emphasis>),
     Line(Vec<Emphasis>),
+    Table(usize, TableHeader, TableData)
 }
+
+#[derive(Debug, PartialEq)]
+pub struct TableHeader(pub Vec<Vec<Emphasis>>);
+
+#[derive(Debug, PartialEq)]
+pub struct TableData(pub Vec<Vec<Vec<Emphasis>>>);
 
 #[derive(Debug, PartialEq)]
 pub enum Emphasis {
@@ -21,7 +28,6 @@ pub struct ParsedResult<'a, T> {
     pub token: T,
     pub rest: &'a str,
 }
-
 impl<'a, T> ParsedResult<'a, T> {
     pub fn new(token: T, rest: &'a str) -> ParsedResult<'a, T> {
         ParsedResult { token: token, rest: rest }
