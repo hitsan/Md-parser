@@ -73,10 +73,15 @@ pub fn words(text: &str) -> Vec<Word> {
     tokens
 }
 
-pub fn sentence(text: &str) -> Option<ParsedResult<Md>> {
-    if text == "" { return None }
+pub fn sentence(texts: &str) -> Option<ParsedResult<Md>> {
+    if texts == "" { return None }
+    let (text, rest) = if let Some(n) = texts.find("\n") {
+        (&texts[..n], &texts[(n+1)..])
+    } else {
+        (texts, "")
+    };
     let tokens = words(&text);
-    Some(ParsedResult::new(Md::Sentence(tokens),""))
+    Some(ParsedResult::new(Md::Sentence(tokens), rest))
 }
 
 #[cfg(test)]
@@ -242,6 +247,24 @@ mod tests {
         let token = vec!(hello, bo);
         let token = Md::Sentence(token);
         let rest = "";
+        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+    }
+
+    #[test]
+    fn test_text_multiline() {
+        let test_word = "Hello\n World!";
+        let token = Word::Normal("Hello".to_string());
+        let token = vec!(token);
+        let token = Md::Sentence(token);
+        let rest = " World!";
+        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+
+        let test_word = "**Hello**\n World!";
+        let token = Word::Normal("Hello".to_string());
+        let token = Word::Bold(vec!(token));
+        let token = vec!(token);
+        let token = Md::Sentence(token);
+        let rest = " World!";
         assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
     }
 }
