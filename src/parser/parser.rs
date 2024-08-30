@@ -93,4 +93,22 @@ mod tests {
         assert_eq!(parse(&test_word), vec!(Md::Heading(1, token)));
     }
 
+    #[test]
+    fn test_parsing_multiline() {
+        let test_word = "# Hello World!\nrust parser\n**lines**";
+        let token = vec!(Word::Normal("Hello World!".to_string()));
+        let heading_token = Md::Heading(1, token);
+
+        let s_token = Word::Normal("rust parser".to_string());
+        let s_token = vec!(s_token);
+        let s_token = Md::Sentence(s_token);
+        
+        let b_token = Word::Normal("lines".to_string());
+        let b_token = Word::Bold(vec!(b_token));
+        let b_token = vec!(b_token);
+        let b_token = Md::Sentence(b_token);
+
+        assert_eq!(parse(&test_word), vec!(heading_token, s_token, b_token));
+    }
+
 }
