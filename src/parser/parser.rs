@@ -42,7 +42,8 @@ pub fn consume<'a>(text: &'a str, pattern: &'a str) -> Option<&'a str> {
 pub fn parse(text: &str) -> Md {
     let parsers = vec!(heading, sentence);
     let ret = parsers.iter().find_map(|f| f(text));
-    ret.unwrap()
+    let ret = ret.unwrap();
+    ret.token
 }
 
 #[cfg(test)]
@@ -52,41 +53,41 @@ mod tests {
     #[test]
     fn test_parser() {
         let test_word = "__**Hello World!**__";
-        let expectation = vec!(Word::Normal("Hello World!".to_string()));
-        let expectation = vec!(Word::Bold(expectation));
-        let expectation = Word::Underline(expectation);
-        let expectation = vec!(expectation);
-        let expectation = Md::Sentence(expectation);
-        assert_eq!(parse(&test_word), expectation);
+        let token = vec!(Word::Normal("Hello World!".to_string()));
+        let token = vec!(Word::Bold(token));
+        let token = Word::Underline(token);
+        let token = vec!(token);
+        let token = Md::Sentence(token);
+        assert_eq!(parse(&test_word), token);
 
         let test_word = "**__Hello World!__**";
-        let expectation = vec!(Word::Normal("Hello World!".to_string()));
-        let expectation = vec!(Word::Underline(expectation));
-        let expectation = Word::Bold(expectation);
-        let expectation = vec!(expectation);
-        let expectation = Md::Sentence(expectation);
-        assert_eq!(parse(&test_word), expectation);
+        let token = vec!(Word::Normal("Hello World!".to_string()));
+        let token = vec!(Word::Underline(token));
+        let token = Word::Bold(token);
+        let token = vec!(token);
+        let token = Md::Sentence(token);
+        assert_eq!(parse(&test_word), token);
 
         let test_word = "~~**__Hello World!__**~~";
-        let expectation = vec!(Word::Normal("Hello World!".to_string()));
-        let expectation = vec!(Word::Underline(expectation));
-        let expectation = vec!(Word::Bold(expectation));
-        let expectation = Word::StrikeThough(expectation);
-        let expectation = vec!(expectation);
-        let expectation = Md::Sentence(expectation);
-        assert_eq!(parse(&test_word), expectation);
+        let token = vec!(Word::Normal("Hello World!".to_string()));
+        let token = vec!(Word::Underline(token));
+        let token = vec!(Word::Bold(token));
+        let token = Word::StrikeThough(token);
+        let token = vec!(token);
+        let token = Md::Sentence(token);
+        assert_eq!(parse(&test_word), token);
 
         let test_word = "Hello **World!**";
         let hello = Word::Normal("Hello ".to_string());
         let world = Word::Normal("World!".to_string());
         let world = Word::Bold(vec!(world));
-        let expectation = vec!(hello, world);
-        let expectation = Md::Sentence(expectation);
-        assert_eq!(parse(&test_word), expectation);
+        let token = vec!(hello, world);
+        let token = Md::Sentence(token);
+        assert_eq!(parse(&test_word), token);
 
         let test_word = "# Hello World!";
-        let expectation = vec!(Word::Normal("Hello World!".to_string()));
-        assert_eq!(parse(&test_word), Md::Heading(1, expectation));
+        let token = vec!(Word::Normal("Hello World!".to_string()));
+        assert_eq!(parse(&test_word), Md::Heading(1, token));
     }
 
 }
