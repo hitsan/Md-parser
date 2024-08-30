@@ -74,6 +74,7 @@ pub fn words(text: &str) -> Vec<Word> {
 }
 
 pub fn sentence(text: &str) -> Option<ParsedResult<Md>> {
+    if text == "" { return None }
     let tokens = words(&text);
     Some(ParsedResult::new(Md::Sentence(tokens),""))
 }

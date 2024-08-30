@@ -39,11 +39,14 @@ pub fn consume<'a>(text: &'a str, pattern: &'a str) -> Option<&'a str> {
     Some(&text[length..])
 }
 
-pub fn parse(text: &str) -> Md {
+pub fn parse(mut text: &str) -> Vec<Md> {
     let parsers = vec!(heading, sentence);
-    let ret = parsers.iter().find_map(|f| f(text));
-    let ret = ret.unwrap();
-    ret.token
+    let mut md: Vec<Md> = vec!();
+    while let Some(ret) = parsers.iter().find_map(|f| f(text)) {
+        md.push(ret.token);
+        text = ret.rest;
+    }
+    md
 }
 
 #[cfg(test)]
@@ -58,7 +61,7 @@ mod tests {
         let token = Word::Underline(token);
         let token = vec!(token);
         let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), token);
+        assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "**__Hello World!__**";
         let token = vec!(Word::Normal("Hello World!".to_string()));
@@ -66,7 +69,7 @@ mod tests {
         let token = Word::Bold(token);
         let token = vec!(token);
         let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), token);
+        assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "~~**__Hello World!__**~~";
         let token = vec!(Word::Normal("Hello World!".to_string()));
@@ -75,7 +78,7 @@ mod tests {
         let token = Word::StrikeThough(token);
         let token = vec!(token);
         let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), token);
+        assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "Hello **World!**";
         let hello = Word::Normal("Hello ".to_string());
@@ -83,11 +86,11 @@ mod tests {
         let world = Word::Bold(vec!(world));
         let token = vec!(hello, world);
         let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), token);
+        assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "# Hello World!";
         let token = vec!(Word::Normal("Hello World!".to_string()));
-        assert_eq!(parse(&test_word), Md::Heading(1, token));
+        assert_eq!(parse(&test_word), vec!(Md::Heading(1, token)));
     }
 
 }
