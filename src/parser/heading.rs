@@ -1,11 +1,11 @@
 use crate::parser::parser::*;
-use super::line::terms;
+use super::line::words;
 
-pub fn heading(sentence: &str) -> Option<Md> {
+pub fn heading(text: &str) -> Option<Md> {
     ["#", "##", "###"].iter().find_map(|p| {
-        let sentence = consume(sentence, p)?;
-        let sentence = space(sentence)?;
-        let tokens = terms(&sentence);
+        let text = consume(text, p)?;
+        let text = space(text)?;
+        let tokens = words(&text);
         let ret = Md::Heading(p.len(), tokens);
         Some(ret)
     })
@@ -18,19 +18,19 @@ mod tests {
     #[test]
     fn test_heading() {
         let test_word = "# Hello World!";
-        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Word::Normal("Hello World!".to_string()));
         assert_eq!(heading(&test_word), Some(Md::Heading(1, expectation)));
 
         let test_word = "#    Hello World!";
-        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Word::Normal("Hello World!".to_string()));
         assert_eq!(heading(&test_word), Some(Md::Heading(1, expectation)));
 
         let test_word = "## Hello World!";
-        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Word::Normal("Hello World!".to_string()));
         assert_eq!(heading(&test_word), Some(Md::Heading(2, expectation)));
 
         let test_word = "### Hello World!";
-        let expectation = vec!(Emphasis::Text("Hello World!".to_string()));
+        let expectation = vec!(Word::Normal("Hello World!".to_string()));
         assert_eq!(heading(&test_word), Some(Md::Heading(3, expectation)));
     }
 
