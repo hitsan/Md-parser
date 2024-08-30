@@ -1,5 +1,5 @@
 use super::heading::heading;
-use super::line::line;
+use super::line::sentence;
 
 #[derive(Debug, PartialEq)]
 pub enum Md {
@@ -15,8 +15,6 @@ pub enum Word {
     StrikeThough(Vec<Word>),
     Underline(Vec<Word>),
 }
-
-pub struct Words(Vec<Word>);
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ParsedResult<'a, T> {
@@ -42,7 +40,7 @@ pub fn consume<'a>(text: &'a str, pattern: &'a str) -> Option<&'a str> {
 }
 
 pub fn parse(text: &str) -> Md {
-    let parsers = vec!(heading, line);
+    let parsers = vec!(heading, sentence);
     let ret = parsers.iter().find_map(|f| f(text));
     ret.unwrap()
 }
