@@ -1,5 +1,5 @@
 use super::heading::heading;
-use super::line::sentence;
+use super::sentence::sentence;
 use super::table::table;
 
 #[derive(Debug, PartialEq)]

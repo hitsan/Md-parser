@@ -1,5 +1,5 @@
 use crate::parser::parser::*;
-use super::line::words;
+use super::sentence::words;
 
 pub fn heading(texts: &str) -> Option<ParsedResult<Md>> {
     ["#", "##", "###"].iter().find_map(|p| {

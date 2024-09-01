@@ -1,5 +1,5 @@
 use crate::parser::parser::*;
-use super::line::words;
+use super::sentence::words;
 use std::collections::HashSet;
 
 fn record<'a, T>(
