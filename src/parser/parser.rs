@@ -16,6 +16,26 @@ pub enum Word {
     Underline(Vec<Word>),
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Words(pub Vec<Word>);
+
+#[derive(Debug, PartialEq)]
+pub struct Record(pub Vec<Words>);
+
+#[derive(Debug, PartialEq)]
+pub struct Table {
+    pub header: Record,
+    pub align: Vec<Align>,
+    pub records: Vec<Record>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Align {
+    Right,
+    Center,
+    Left
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct ParsedResult<'a, T> {
     pub token: T,
