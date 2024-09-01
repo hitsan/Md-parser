@@ -2,35 +2,35 @@ use crate::parser::parser::*;
 use super::line::words;
 use std::collections::HashSet;
 
-fn header(mut texts: &str) -> Option<ParsedResult<Record>> {
-    texts = texts.trim_end();
-    if !texts.starts_with("|") || !texts.ends_with("|") {
+fn header(texts: &str) -> Option<ParsedResult<Record>> {
+    let n = texts.find("\n")?;
+    let (text, rest) = (&texts[..n].trim_end(), &texts[(n+1)..]);
+    if !text.starts_with("|") || !text.ends_with("|") {
         return None
     }
-    let len = texts.len();
-    texts = &texts[1..(len-1)];
-    let words: Vec<Words> = texts.split("|").map(|text| {
-        let text = text.trim();
-        let words = words(text);
+    let len = text.len();
+    let words: Vec<Words> = text[1..(len-1)].split("|").map(|t| {
+        let t = t.trim();
+        let words = words(t);
         Words(words)
     }).collect::<Vec<_>>();
     let record = Record(words);
-    Some(ParsedResult{token: record, rest: ""})
+    Some(ParsedResult{token: record, rest: rest})
 }
 
-fn align(mut texts: &str, num: usize) -> Option<ParsedResult<Vec<Align>>> {
-    texts = texts.trim_end();
-    if !texts.starts_with("|") || !texts.ends_with("|") {
+fn align(texts: &str, num: usize) -> Option<ParsedResult<Vec<Align>>> {
+    let n = texts.find("\n")?;
+    let (text, rest) = (&texts[..n].trim_end(), &texts[(n+1)..]);
+    if !text.starts_with("|") || !text.ends_with("|") {
         return None
     }
-    let len = texts.len();
-    texts = &texts[1..(len-1)];
-    let aligns: Vec<Align> = texts.split("|").filter_map(|text| {
-        let text = text.trim();
-        align_parse(text)
+    let len = text.len();
+    let aligns: Vec<Align> = text[1..(len-1)].split("|").filter_map(|t| {
+        let t = t.trim();
+        align_parse(t)
     }).collect::<Vec<_>>();
     if aligns.len() == num {
-        Some(ParsedResult{token: aligns, rest: ""})        
+        Some(ParsedResult{token: aligns, rest})        
     } else {
         None
     }
@@ -39,39 +39,32 @@ fn align(mut texts: &str, num: usize) -> Option<ParsedResult<Vec<Align>>> {
 fn align_parse(text: &str) -> Option<Align> {
     let l = text.starts_with(":");
     let r = text.ends_with(":");
-    if l && r {
-        let t = &text[1..text.len()-1];
-        let p: HashSet<char> = t.chars().collect();
-        if p.len() == 1 && p.contains(&'-') {
-            Some(Align::Center)
-        } else {
-            None
-        }
-    } else if l {
-        let t = &text[1..];
-        let p: HashSet<char> = t.chars().collect();
-        if p.len() == 1 && p.contains(&'-') {
-            Some(Align::Left)
-        } else {
-            None
-        }
-    } else if r {
-        let t = &text[..text.len()-1];
-        let p: HashSet<char> = t.chars().collect();
-        if p.len() == 1 && p.contains(&'-') {
-            Some(Align::Right)
-        } else {
-            None
-        }
-    } else {
-        let t = text;
-        let p: HashSet<char> = t.chars().collect();
-        if p.len() == 1 && p.contains(&'-') {
-            Some(Align::Left)
-        } else {
-            None
-        }
+    let is_only_hyphen = |text: &str| {
+        let p: HashSet<char> = text.chars().collect();
+        p.len() == 1 && p.contains(&'-')
+    };
+    match (l, r) {
+        (true, true) if is_only_hyphen(&text[1..text.len()-1]) => Some(Align::Center),
+        (true, false) if is_only_hyphen(&text[1..]) => Some(Align::Left),
+        (false, true) if is_only_hyphen(&text[..text.len()-1]) => Some(Align::Right),
+        (false, false) if is_only_hyphen(&text) => Some(Align::Left),
+        _ => None,
     }
+}
+
+fn records(texts: &str, n: usize) -> Option<ParsedResult<Vec<Record>>> {
+    // let n = texts.find("\n");
+    let a = Words(vec!(Word::Normal("A".to_string())));
+    let b = Words(vec!(Word::Normal("B".to_string())));
+    let c = Words(vec!(Word::Normal("C".to_string())));
+    let r0 = Record(vec!(a, b, c));
+    let a = Words(vec!(Word::Normal("a".to_string())));
+    let b = Words(vec!(Word::Normal("b".to_string())));
+    let c = Words(vec!(Word::Normal("c".to_string())));
+    let r1 = Record(vec!(a, b, c));
+    let record = vec!(r0, r1);
+    let rest = "";
+    Some(ParsedResult{token: record, rest})
 }
 
 // pub fn table(texts: &str) -> Option<ParsedResult<Md>> {
@@ -95,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_header() {
-        let h = "| A | B | C |";
+        let h = "| A | B | C | \n";
         let a = Words(vec!(Word::Normal("A".to_string())));
         let b = Words(vec!(Word::Normal("B".to_string())));
         let c = Words(vec!(Word::Normal("C".to_string())));
@@ -103,19 +96,36 @@ mod tests {
         let rest = "";
         assert_eq!(header(&h), Some(ParsedResult{token, rest}));
 
-        let h = "| A | B | C ";
+        let h = "| A | B | C \n";
         assert_eq!(header(&h), None);
     }
 
     #[test]
     fn test_align() {
-        let h = "| -: | :-: | :- | - |";
+        let h = "| -: | :-: | :- | --- |\n";
         let token = vec!(Align::Right, Align::Center, Align::Left, Align::Left);
         let rest = "";
         assert_eq!(align(&h, 4), Some(ParsedResult{token, rest}));
 
+        let h = "| -: | :-b: | :- | - |\n";
+        assert_eq!(align(&h, 4), None);
     }
 
+    #[test]
+    fn test_records() {
+        let h = "| A | B | C |\n| a | b | c |";
+        let a = Words(vec!(Word::Normal("A".to_string())));
+        let b = Words(vec!(Word::Normal("B".to_string())));
+        let c = Words(vec!(Word::Normal("C".to_string())));
+        let r0 = Record(vec!(a, b, c));
+        let a = Words(vec!(Word::Normal("a".to_string())));
+        let b = Words(vec!(Word::Normal("b".to_string())));
+        let c = Words(vec!(Word::Normal("c".to_string())));
+        let r1 = Record(vec!(a, b, c));
+        let record = vec!(r0, r1);
+        let rest = "";
+        assert_eq!(records(&h, 3), Some(ParsedResult{token: record, rest}));
+    }
     // #[test]
     // fn test_align() {
     //     let h = "| -: | :-: | :- | - |";
