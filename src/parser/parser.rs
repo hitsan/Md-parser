@@ -5,6 +5,7 @@ use super::line::sentence;
 pub enum Md {
     Heading(usize, Vec<Word>),
     Sentence(Vec<Word>),
+    Table(Box<Table>),
 }
 
 #[derive(Debug, PartialEq)]
