@@ -21,10 +21,7 @@ fn record<'a, T>(
 
 fn header(texts: &str) -> Option<ParsedResult<Record>> {
     let cells = record(
-        texts, &|txt| {
-            let words = words(txt);
-            Words(words)
-        }
+        texts, &|txt| words(txt)
     )?;
     let record = Record(cells.token);
     Some(ParsedResult{token: record, rest: cells.rest})
@@ -64,7 +61,7 @@ fn align_parse(text: &str) -> Option<Align> {
 fn records(mut texts: &str, n: usize) -> Option<ParsedResult<Vec<Record>>> {
     let mut record_list:Vec<Record> = vec!();
     while let Some(cells) = record(
-        texts, &|txt| Words(words(txt))) {
+        texts, &|txt| words(txt)) {
         let record = cells.token;
         println!("{:?}", &cells.rest);
         if record.len()!=n {

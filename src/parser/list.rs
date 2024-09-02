@@ -10,8 +10,7 @@ fn item(texts: &str) -> Option<ParsedResult<List>> {
     };
     let text = consume(text, p)?;
     let text = space(text)?;
-    let tokens = words(&text);
-    let words = Words(tokens);
+    let words = words(&text);
     let item = List::Item(words);
     Some(ParsedResult::new(item, rest))
 }
