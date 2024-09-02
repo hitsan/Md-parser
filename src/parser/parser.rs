@@ -7,6 +7,7 @@ pub enum Md {
     Heading(usize, Vec<Word>),
     Sentence(Vec<Word>),
     Table(Box<Table>),
+    List(Vec<List>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -16,6 +17,12 @@ pub enum Word {
     Bold(Vec<Word>),
     StrikeThough(Vec<Word>),
     Underline(Vec<Word>),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum List {
+    Item(Words),
+    Items(Words, Vec<List>),
 }
 
 #[derive(Debug, PartialEq)]
