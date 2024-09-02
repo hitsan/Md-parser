@@ -2,13 +2,12 @@ use crate::parser::parser::*;
 use super::sentence::words;
 
 fn item(texts: &str) -> Option<ParsedResult<List>> {
-    let p = "-";
     let (text, rest) = if let Some(n) = texts.find("\n") {
         (&texts[..n], &texts[(n+1)..])
     } else {
         (texts, "")
     };
-    let text = consume(text, p)?;
+    let text = consume(text, "-")?;
     let text = space(text)?;
     let words = words(&text);
     let item = List::Item(words);
