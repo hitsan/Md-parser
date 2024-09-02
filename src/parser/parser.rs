@@ -7,7 +7,7 @@ pub enum Md {
     Heading(usize, Words),
     Sentence(Words),
     Table(Box<Table>),
-    List(Vec<Item>),
+    List(Items),
 }
 
 #[derive(Debug, PartialEq)]
@@ -20,7 +20,10 @@ pub enum Word {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Item(pub Words, pub Option<Vec<Item>>);
+pub struct Item(pub Words, pub Option<Items>);
+
+#[derive(Debug, PartialEq)]
+pub struct Items(pub Vec<Item>);
 
 #[derive(Debug, PartialEq)]
 pub struct Words(pub Vec<Word>);

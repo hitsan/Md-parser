@@ -14,6 +14,17 @@ fn item(texts: &str) -> Option<ParsedResult<Item>> {
     Some(ParsedResult::new(item, rest))
 }
 
+fn items(mut texts: &str) -> Option<ParsedResult<Items>> {
+    let mut items: Vec<Item> = vec!();
+    while let Some(i) = item(texts) {
+        items.push(i.token);
+        texts = i.rest;
+    }
+    if items.is_empty() { return None }
+    let items = Items(items);
+    Some(ParsedResult::new(items, texts))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -33,5 +44,34 @@ mod tests {
         let l = Item(w, None);
         let rest = "";
         assert_eq!(item(&test_word), Some(ParsedResult{token: l, rest}));
+
+        let test_word = "Hello World!";
+        assert_eq!(item(&test_word), None);
+
+        let test_word = "-Hello World!";
+        assert_eq!(item(&test_word), None);
+    }
+
+    #[test]
+    fn test_items() {
+        let test_word = "- Hello\n- World\n- Rust";
+        let n = Word::Normal("Hello".to_string());
+        let w = Words(vec!(n));
+        let i0 = Item(w, None);
+
+        let n = Word::Normal("World".to_string());
+        let w = Words(vec!(n));
+        let i1 = Item(w, None);
+
+        let n = Word::Normal("Rust".to_string());
+        let w = Words(vec!(n));
+        let i2 = Item(w, None);
+
+        let token = Items(vec!(i0, i1, i2));
+        let rest = "";
+        assert_eq!(items(&test_word), Some(ParsedResult{token, rest}));
+
+        let test_word = "Rust";
+        assert_eq!(items(&test_word), None);
     }
 }
