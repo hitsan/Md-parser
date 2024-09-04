@@ -23,6 +23,13 @@ fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
     let text = consume(text, "-")?;
     let text = space(text)?;
     let words = words(&text);
+    let n = count_tab(text, 0);
+    let child = if n.is_none() {
+        None
+    } else {
+        let c = items(texts).unwrap();
+        Some(c.token)
+    };
     let item = Item(words, None);
     Some(ParsedResult::new(item, rest))
 }
@@ -86,6 +93,22 @@ mod tests {
 
         let test_word = "Rust";
         assert_eq!(items(&test_word), None);
+    }
+
+    #[test]
+    fn test_nest_items() {
+        let test_word = "- Hello\n  - World";
+        let n = Word::Normal("World".to_string());
+        let w = Words(vec!(n));
+        let i0 = Item(w, None);
+        let child = Items(vec!(i0));
+        let n = Word::Normal("Hello".to_string());
+        let w = Words(vec!(n));
+        let i1 = Item(w, Some(child));
+
+        let token = Items(vec!(i1));
+        let rest = "";
+        assert_eq!(items(&test_word), Some(ParsedResult{token, rest}));
     }
 
     #[test]
