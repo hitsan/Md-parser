@@ -95,5 +95,14 @@ mod tests {
 
         let text = "hello";
         assert_eq!(count_tab(text, 1), None);
+
+        let text = "hello";
+        assert_eq!(count_tab(text, 0), Some(ParsedResult{token: 0, rest: "hello"}));
+
+        let text = "  hello";
+        assert_eq!(count_tab(text, 1), Some(ParsedResult{token: 1, rest: "hello"}));
+
+        let text = "   hello";
+        assert_eq!(count_tab(text, 1), Some(ParsedResult{token: 1, rest: " hello"}));
     }
 }
