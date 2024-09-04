@@ -1,6 +1,19 @@
 use crate::parser::parser::*;
 use super::sentence::words;
 
+fn count_tab(mut texts: &str, tab_num: usize) -> Option<ParsedResult<usize>> {
+    let mut num: usize = 0;
+    while let Some(text) = consume(texts, "  ") {
+        texts = text;
+        num += 1;
+    }
+    if num < tab_num {
+        None
+    } else {
+        Some(ParsedResult{token: num, rest: texts})
+    }
+}
+
 fn item(texts: &str) -> Option<ParsedResult<Item>> {
     let (text, rest) = if let Some(n) = texts.find("\n") {
         (&texts[..n], &texts[(n+1)..])
@@ -73,5 +86,14 @@ mod tests {
 
         let test_word = "Rust";
         assert_eq!(items(&test_word), None);
+    }
+
+    #[test]
+    fn test_tab() {
+        let text = "  hello";
+        assert_eq!(count_tab(text, 0), Some(ParsedResult{token: 1, rest: "hello"}));
+
+        let text = "hello";
+        assert_eq!(count_tab(text, 1), None);
     }
 }
