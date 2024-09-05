@@ -31,7 +31,6 @@ fn items(mut texts: &str, tab_num: usize) -> ParsedResult<Items> {
     while let Some(i) = item(texts, tab_num) {
         if count_space(texts) < tab_num { break; }
         items.push(i.token);
-        println!("{:?}", items);
         texts = i.rest;
     }
     let items = Items(items);
@@ -149,11 +148,6 @@ mod tests {
         let end_item = Item(end, emp);
 
         let token = Items(vec!(hello_item, end_item));
-        // let n = Word::Normal("Hello".to_string());
-        // let w = Words(vec!(n));
-        // let i1 = Item(w, child);
-
-        // let token = Items(vec!(i1));
         let rest = "";
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
     }
