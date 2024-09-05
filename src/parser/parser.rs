@@ -20,7 +20,7 @@ pub enum Word {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Item(pub Words, pub Option<Items>);
+pub struct Item(pub Words, pub Items);
 
 #[derive(Debug, PartialEq)]
 pub struct Items(pub Vec<Item>);

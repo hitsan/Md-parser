@@ -1,17 +1,8 @@
 use crate::parser::parser::*;
 use super::sentence::words;
 
-fn count_tab(mut texts: &str, tab_num: usize) -> Option<ParsedResult<usize>> {
-    let mut num: usize = 0;
-    while let Some(text) = consume(texts, "  ") {
-        texts = text;
-        num += 1;
-    }
-    if num <= tab_num {
-        None
-    } else {
-        Some(ParsedResult{token: num, rest: texts})
-    }
+fn count_space(texts: &str) -> usize {
+    texts.chars().take_while(|c| c ==&' ' ).count()
 }
 
 fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
@@ -20,29 +11,30 @@ fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
     } else {
         (texts, "")
     };
+    let text = text.trim_start();
     let text = consume(text, "-")?;
     let text = space(text)?;
     let words = words(&text);
-    let n = count_tab(text, 0);
-    let child = if n.is_none() {
-        None
+    let space_num = count_space(&rest);
+    let (i, rest) = if space_num <= tab_num {
+        (Items(vec!()), rest)
     } else {
-        let c = items(texts).unwrap();
-        Some(c.token)
+        let c = items(&rest, space_num);
+        (c.token, c.rest)
     };
-    let item = Item(words, None);
+    let item = Item(words, i);
     Some(ParsedResult::new(item, rest))
 }
 
-fn items(mut texts: &str) -> Option<ParsedResult<Items>> {
+fn items(mut texts: &str, tab_num: usize) -> ParsedResult<Items> {
     let mut items: Vec<Item> = vec!();
-    while let Some(i) = item(texts, 0) {
+    while let Some(i) = item(texts, tab_num) {
+        if count_space(texts) < tab_num { break; }
         items.push(i.token);
         texts = i.rest;
     }
-    if items.is_empty() { return None }
     let items = Items(items);
-    Some(ParsedResult::new(items, texts))
+    ParsedResult::new(items, texts)
 }
 
 #[cfg(test)]
@@ -54,14 +46,16 @@ mod tests {
         let test_word = "- Hello World!\n";
         let n = Word::Normal("Hello World!".to_string());
         let w = Words(vec!(n));
-        let l = Item(w, None);
+        let items0 = Items(vec!());
+        let l = Item(w, items0);
         let rest = "";
         assert_eq!(item(&test_word, 0), Some(ParsedResult{token: l, rest}));
 
         let test_word = "- Hello World!";
         let n = Word::Normal("Hello World!".to_string());
         let w = Words(vec!(n));
-        let l = Item(w, None);
+        let items0 = Items(vec!());
+        let l = Item(w, items0);
         let rest = "";
         assert_eq!(item(&test_word, 0), Some(ParsedResult{token: l, rest}));
 
@@ -77,22 +71,26 @@ mod tests {
         let test_word = "- Hello\n- World\n- Rust";
         let n = Word::Normal("Hello".to_string());
         let w = Words(vec!(n));
-        let i0 = Item(w, None);
+        let items0 = Items(vec!());
+        let i0 = Item(w, items0);
 
         let n = Word::Normal("World".to_string());
         let w = Words(vec!(n));
-        let i1 = Item(w, None);
+        let items1 = Items(vec!());
+        let i1 = Item(w, items1);
 
         let n = Word::Normal("Rust".to_string());
         let w = Words(vec!(n));
-        let i2 = Item(w, None);
+        let items2 = Items(vec!());
+        let i2 = Item(w, items2);
 
         let token = Items(vec!(i0, i1, i2));
         let rest = "";
-        assert_eq!(items(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
 
         let test_word = "Rust";
-        assert_eq!(items(&test_word), None);
+        let token = Items(vec!());
+        assert_eq!(items(&test_word, 0), ParsedResult{token, rest: test_word});
     }
 
     #[test]
@@ -100,32 +98,69 @@ mod tests {
         let test_word = "- Hello\n  - World";
         let n = Word::Normal("World".to_string());
         let w = Words(vec!(n));
-        let i0 = Item(w, None);
+        let items0 = Items(vec!());
+        let i0 = Item(w, items0);
         let child = Items(vec!(i0));
         let n = Word::Normal("Hello".to_string());
         let w = Words(vec!(n));
-        let i1 = Item(w, Some(child));
+        let i1 = Item(w, child);
 
         let token = Items(vec!(i1));
         let rest = "";
-        assert_eq!(items(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
+
+
+        let test_word = "- Hello\n  - World\n  - End";
+        let world = Word::Normal("World".to_string());
+        let world = Words(vec!(world));
+        let items0 = Items(vec!());
+        let world_item = Item(world, items0);
+
+        let end = Word::Normal("End".to_string());
+        let end = Words(vec!(end));
+        let items0 = Items(vec!());
+        let end_item = Item(end, items0);
+
+        let child = Items(vec!(world_item, end_item));
+        let n = Word::Normal("Hello".to_string());
+        let w = Words(vec!(n));
+        let i1 = Item(w, child);
+
+        let token = Items(vec!(i1));
+        let rest = "";
+        assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
+
+
+        let test_word = "- Hello\n  - World\n- End";
+        let world = Word::Normal("World".to_string());
+        let world = Words(vec!(world));
+        let emp = Items(vec!());
+        let world_item = Item(world, emp);
+
+        let child = Items(vec!(world_item));
+        let n = Word::Normal("Hello".to_string());
+        let w = Words(vec!(n));
+        let hello_item = Item(w, child);
+
+        let end = Word::Normal("End".to_string());
+        let end = Words(vec!(end));
+        let emp = Items(vec!());
+        let end_item = Item(end, emp);
+
+        let token = Items(vec!(hello_item, end_item));
+        let rest = "";
+        assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
     }
 
     #[test]
     fn test_tab() {
         let text = "  hello";
-        assert_eq!(count_tab(text, 0), Some(ParsedResult{token: 1, rest: "hello"}));
+        assert_eq!(count_space(text), 2);
 
         let text = "hello";
-        assert_eq!(count_tab(text, 1), None);
-
-        let text = "hello";
-        assert_eq!(count_tab(text, 0), None);
-
-        let text = "  hello";
-        assert_eq!(count_tab(text, 1), None);
+        assert_eq!(count_space(text), 0);
 
         let text = "     hello";
-        assert_eq!(count_tab(text, 1), Some(ParsedResult{token: 2, rest: " hello"}));
+        assert_eq!(count_space(text), 5);
     }
 }
