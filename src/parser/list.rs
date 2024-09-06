@@ -1,8 +1,8 @@
 use crate::parser::parser::*;
 use super::sentence::words;
 
-fn count_space(texts: &str) -> usize {
-    texts.chars().take_while(|c| c ==&' ' ).count()
+fn count_tab(texts: &str) -> usize {
+    texts.chars().take_while(|c| c ==&' ' ).count()/2
 }
 
 fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
@@ -15,7 +15,7 @@ fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
     let text = consume(text, "-")?;
     let text = space(text)?;
     let words = words(&text);
-    let space_num = count_space(&rest);
+    let space_num = count_tab(&rest);
     let (i, rest) = if space_num <= tab_num {
         (Items(vec!()), rest)
     } else {
@@ -29,7 +29,7 @@ fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
 fn items(mut texts: &str, tab_num: usize) -> ParsedResult<Items> {
     let mut items: Vec<Item> = vec!();
     while let Some(i) = item(texts, tab_num) {
-        if count_space(texts) < tab_num { break; }
+        if count_tab(texts) < tab_num { break; }
         items.push(i.token);
         texts = i.rest;
     }
@@ -206,12 +206,12 @@ mod tests {
     #[test]
     fn test_tab() {
         let text = "  hello";
-        assert_eq!(count_space(text), 2);
+        assert_eq!(count_tab(text), 1);
 
         let text = "hello";
-        assert_eq!(count_space(text), 0);
+        assert_eq!(count_tab(text), 0);
 
         let text = "     hello";
-        assert_eq!(count_space(text), 5);
+        assert_eq!(count_tab(text), 2);
     }
 }
