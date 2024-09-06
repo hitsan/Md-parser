@@ -37,6 +37,14 @@ fn items(mut texts: &str, tab_num: usize) -> ParsedResult<Items> {
     ParsedResult::new(items, texts)
 }
 
+pub fn list(texts: &str) -> Option<ParsedResult<Md>> {
+    let l = items(texts, 0);
+    match l.token {
+        Items(item) if item.is_empty() => None,
+        _ => Some(ParsedResult{token: Md::List(l.token), rest: l.rest})
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -213,5 +221,22 @@ mod tests {
 
         let text = "     hello";
         assert_eq!(count_tab(text), 2);
+    }
+
+    #[test]
+    fn test_list() {
+        let test_word = "- Hello\n  - World";
+        let n = Word::Normal("World".to_string());
+        let w = Words(vec!(n));
+        let items0 = Items(vec!());
+        let i0 = Item(w, items0);
+        let child = Items(vec!(i0));
+        let n = Word::Normal("Hello".to_string());
+        let w = Words(vec!(n));
+        let i1 = Item(w, child);
+
+        let token = Md::List(Items(vec!(i1)));
+        let rest = "";
+        assert_eq!(list(&test_word), Some(ParsedResult{token, rest}));
     }
 }
