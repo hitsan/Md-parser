@@ -1,13 +1,14 @@
 use super::heading::heading;
 use super::sentence::sentence;
 use super::table::table;
+use super::list::list;
 
 #[derive(Debug, PartialEq)]
 pub enum Md {
     Heading(usize, Words),
     Sentence(Words),
     Table(Box<Table>),
-    List(Vec<List>),
+    List(Items),
 }
 
 #[derive(Debug, PartialEq)]
@@ -20,10 +21,10 @@ pub enum Word {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum List {
-    Item(Words),
-    Items(Words, Vec<List>),
-}
+pub struct Item(pub Words, pub Items);
+
+#[derive(Debug, PartialEq)]
+pub struct Items(pub Vec<Item>);
 
 #[derive(Debug, PartialEq)]
 pub struct Words(pub Vec<Word>);
@@ -69,7 +70,7 @@ pub fn consume<'a>(text: &'a str, pattern: &'a str) -> Option<&'a str> {
 }
 
 pub fn parse(mut text: &str) -> Vec<Md> {
-    let parsers = vec!(table, heading, sentence);
+    let parsers = vec!(table, list, heading, sentence);
     let mut md: Vec<Md> = vec!();
     while let Some(ret) = parsers.iter().find_map(|f| f(text)) {
         md.push(ret.token);
@@ -163,5 +164,21 @@ mod tests {
         let t = Md::Table(Box::new(t));
 
         assert_eq!(parse(&test), vec!(t));
+    }
+
+    #[test]
+    fn test_list() {
+        let test_word = "- Hello\n  - World";
+        let n = Word::Normal("World".to_string());
+        let w = Words(vec!(n));
+        let items0 = Items(vec!());
+        let i0 = Item(w, items0);
+        let child = Items(vec!(i0));
+        let n = Word::Normal("Hello".to_string());
+        let w = Words(vec!(n));
+        let i1 = Item(w, child);
+
+        let token = Md::List(Items(vec!(i1)));
+        assert_eq!(parse(&test_word), vec!(token));
     }
 }
