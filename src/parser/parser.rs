@@ -199,6 +199,8 @@ mod tests {
 
         let hello = Word::Normal("hello".to_string());
         let world = Word::Normal("world".to_string());
-        assert_eq!(words![word0, word1], Words(vec!(hello, world)));
+        assert_eq!(words!(word0, word1), Words(vec!(hello, world)));
+
+        assert_eq!(words!(), Words(vec!()));
     }
 }
