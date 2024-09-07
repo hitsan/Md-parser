@@ -106,82 +106,69 @@ mod tests {
 
     #[test]
     fn test_header() {
-        let h = "| A | B | C | \n";
         let a = words!(normal_word!("A"));
         let b = words!(normal_word!("B"));
         let c = words!(normal_word!("C"));
         let token = record!(a, b, c);
         let rest = "";
-        assert_eq!(header(&h), Some(ParsedResult{token, rest}));
+        assert_eq!(header(&"| A | B | C | \n"), Some(ParsedResult{token, rest}));
 
-        let h = "| A | B | C \n";
-        assert_eq!(header(&h), None);
-
-        let h = "|  | B | C |\n";
-        let a = words!(normal_word!(""));
+        let nul = words!(normal_word!(""));
         let b = words!(normal_word!("B"));
         let c = words!(normal_word!("C"));
-        let token = record!(a, b, c);
+        let token = record!(nul, b, c);
         let rest = "";
-        assert_eq!(header(&h), Some(ParsedResult{token, rest}));
+        assert_eq!(header(&"|  | B | C |\n"), Some(ParsedResult{token, rest}));
+        assert_eq!(header(&"| A | B | C \n"), None);
     }
 
     #[test]
     fn test_align() {
-        let h = "| -: | :-: | :- | --- |\n";
         let token = vec!(Align::Right, Align::Center, Align::Left, Align::Left);
         let rest = "";
-        assert_eq!(align(&h, 4), Some(ParsedResult{token, rest}));
-
-        let h = "| -: | :-b: | :- | - |\n";
-        assert_eq!(align(&h, 4), None);
-
-        let h = "|  | :-: | :- | - |\n";
-        assert_eq!(align(&h, 4), None);
+        assert_eq!(align(&"| -: | :-: | :- | --- |\n", 4), Some(ParsedResult{token, rest}));
+        assert_eq!(align(&"| -: | :-b: | :- | - |\n", 4), None);
+        assert_eq!(align(&"|  | :-: | :- | - |\n", 4), None);
     }
 
     #[test]
     fn test_records() {
-        let h = "| A | B | C |\n| a | b | c |\n| j | k | l |\n";
         let a = words!(normal_word!("A"));
         let b = words!(normal_word!("B"));
         let c = words!(normal_word!("C"));
-        let r0 = record!(a, b, c);
+        let record0 = record!(a, b, c);
         let a = words!(normal_word!("a"));
         let b = words!(normal_word!("b"));
         let c = words!(normal_word!("c"));
-        let r1 = record!(a, b, c);
+        let record1 = record!(a, b, c);
         let j = words!(normal_word!("j"));
         let k = words!(normal_word!("k"));
         let l = words!(normal_word!("l"));
-        let r2 = record!(j, k, l);
-        let record = vec!(r0, r1, r2);
+        let record2 = record!(j, k, l);
+        let token = vec!(record0, record1, record2);
         let rest = "";
-        assert_eq!(records(&h, 3), Some(ParsedResult{token: record, rest}));
+        assert_eq!(records(&"| A | B | C |\n| a | b | c |\n| j | k | l |\n", 3), Some(ParsedResult{token, rest}));
     }
     #[test]
     fn test_table() {
-        let test = "| A | B | C | \n|-:|--|:-:|\n| a | b | c |\n| j | k | l |\n";
         let a = words!(normal_word!("A"));
         let b = words!(normal_word!("B"));
         let c = words!(normal_word!("C"));
-        let he = record!(a, b, c);
-    
-        let al = vec!(Align::Right, Align::Left, Align::Center);
+        let header = record!(a, b, c);
+        let align = vec!(Align::Right, Align::Left, Align::Center);
     
         let a = words!(normal_word!("a"));
         let b = words!(normal_word!("b"));
         let c = words!(normal_word!("c"));
-        let r1 = record!(a, b, c);
+        let record0 = record!(a, b, c);
         let j = words!(normal_word!("j"));
         let k = words!(normal_word!("k"));
         let l = words!(normal_word!("l"));
-        let r2 = record!(j, k, l);
-        let re = vec!(r1, r2);
+        let record1 = record!(j, k, l);
+        let records = vec!(record0, record1);
 
-        let t = Table{header: he, align: al, records: re};
-        let t = Md::Table(Box::new(t));
-
-        assert_eq!(table(&test), Some(ParsedResult{token: t, rest: ""}));
+        let token = Md::Table(Box::new(Table{header, align, records}));
+        let rest = "";
+        assert_eq!(table(&"| A | B | C | \n|-:|--|:-:|\n| a | b | c |\n| j | k | l |\n"), Some(ParsedResult{token, rest}));
     }
 }
