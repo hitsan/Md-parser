@@ -28,32 +28,28 @@ fn header(texts: &str) -> Option<ParsedResult<Record>> {
 }
 
 fn align(texts: &str, num: usize) -> Option<ParsedResult<Vec<Align>>> {
-    let cells = record(
-        texts, 
-        &|txt| align_parse(txt.trim()))?;
-    let token = cells.token;
-    let aligns: Vec<Align> = token.into_iter()
+    let result = record(texts, &|text| align_parse(text.trim()))?;
+    let aligns: Vec<Align> = result.token.into_iter()
         .filter_map(|opt| opt)
         .collect();
-    if aligns.len() == num {
-        Some(ParsedResult{token: aligns, rest: cells.rest})        
-    } else {
-        None
+    if aligns.len() != num {
+        return None
     }
+    Some(ParsedResult::new(aligns, result.rest))
 }
 
 fn align_parse(text: &str) -> Option<Align> {
     let l = text.starts_with(":");
     let r = text.ends_with(":");
     let is_only_hyphen = |text: &str| {
-        let p: HashSet<char> = text.chars().collect();
-        p.len() == 1 && p.contains(&'-')
+        let chars: HashSet<char> = text.chars().collect();
+        chars.len() == 1 && chars.contains(&'-')
     };
     match (l, r) {
-        (true, true) if is_only_hyphen(&text[1..text.len()-1]) => Some(Align::Center),
-        (true, false) if is_only_hyphen(&text[1..]) => Some(Align::Left),
-        (false, true) if is_only_hyphen(&text[..text.len()-1]) => Some(Align::Right),
-        (false, false) if is_only_hyphen(&text) => Some(Align::Left),
+        (false, false) if is_only_hyphen(&text)                        => Some(Align::Left),
+        (false, true)  if is_only_hyphen(&text[..text.len()-1])  => Some(Align::Right),
+        (true, false)  if is_only_hyphen(&text[1..])             => Some(Align::Left),
+        (true, true)   if is_only_hyphen(&text[1..text.len()-1]) => Some(Align::Center),
         _ => None,
     }
 }
