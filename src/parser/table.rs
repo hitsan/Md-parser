@@ -77,7 +77,7 @@ fn records(mut texts: &str, n: usize) -> Option<ParsedResult<Vec<Record>>> {
         Some(ParsedResult::new(record_list, texts))
     }
 }
-fn len(record: &Record) -> usize {
+fn record_len(record: &Record) -> usize {
     match record {
         Record(r) => r.len()
     }
@@ -86,7 +86,7 @@ fn len(record: &Record) -> usize {
 pub fn table(texts: &str) -> Option<ParsedResult<Md>> {
     let header_result = header(texts)?;
     let header = header_result.token;
-    let column_num = len(&header);
+    let column_num = record_len(&header);
 
     let align_result = align(header_result.rest, column_num)?;
     let align = align_result.token;
