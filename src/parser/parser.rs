@@ -159,8 +159,8 @@ mod tests {
         assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "Hello **World!**";
-        let hello = normal_word!("Hello ".to_string());
-        let world = normal_word!("World!".to_string());
+        let hello = normal_word!("Hello ");
+        let world = normal_word!("World!");
         let world = Word::Bold(words!(world));
         let token = words!(hello, world);
         let token = Md::Sentence(token);
@@ -177,11 +177,11 @@ mod tests {
         let token = words!(normal_word!("Hello World!"));
         let heading_token = Md::Heading(1, token);
 
-        let s_token = normal_word!("rust parser".to_string());
+        let s_token = normal_word!("rust parser");
         let s_token = words!(s_token);
         let s_token = Md::Sentence(s_token);
         
-        let b_token = normal_word!("lines".to_string());
+        let b_token = normal_word!("lines");
         let b_token = Word::Bold(words!(b_token));
         let b_token = words!(b_token);
         let b_token = Md::Sentence(b_token);
