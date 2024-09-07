@@ -1,6 +1,6 @@
 use crate::parser::parser::*;
 use super::sentence::words;
-use crate::{words,items,normal_word};
+use crate::items;
 
 fn count_tab(texts: &str) -> usize {
     texts.chars().take_while(|c| c ==&' ' ).count()/2
@@ -49,6 +49,7 @@ pub fn list(texts: &str) -> Option<ParsedResult<Md>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{words,items,normal_word};
 
     #[test]
     fn test_item() {

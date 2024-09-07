@@ -1,5 +1,5 @@
 use crate::parser::parser::*;
-use crate::{words,normal_word};
+use crate::normal_word;
 
 fn emphasis<'a>(
     text: &'a str,
@@ -88,6 +88,7 @@ pub fn sentence(texts: &str) -> Option<ParsedResult<Md>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{words,normal_word};
 
     #[test]
     fn test_sentence() {

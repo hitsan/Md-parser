@@ -1,6 +1,5 @@
 use crate::parser::parser::*;
 use super::sentence::words;
-use crate::{words,normal_word};
 
 pub fn heading(texts: &str) -> Option<ParsedResult<Md>> {
     ["#", "##", "###"].iter().find_map(|p| {
@@ -20,6 +19,7 @@ pub fn heading(texts: &str) -> Option<ParsedResult<Md>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{words,normal_word};
 
     #[test]
     fn test_heading() {

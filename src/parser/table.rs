@@ -1,7 +1,6 @@
 use crate::parser::parser::*;
 use super::sentence::words;
 use std::collections::HashSet;
-use crate::{words,record,normal_word};
 
 fn record<'a, T>(
     texts: &'a str,
@@ -103,6 +102,7 @@ pub fn table(texts: &str) -> Option<ParsedResult<Md>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{words,record,normal_word};
 
     #[test]
     fn test_header() {
