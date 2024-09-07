@@ -4,19 +4,17 @@ use std::collections::HashSet;
 
 fn record<'a, T>(
     texts: &'a str,
-    closur: &dyn Fn(&str)->T
+    closure: &dyn Fn(&str)->T
 ) -> Option<ParsedResult<'a, Vec<T>>> {
-    let n = texts.find("\n")?;
-    let (text, rest) = (&texts[..n].trim_end(), &texts[(n+1)..]);
-    if !text.starts_with("|") || !text.ends_with("|") {
-        return None
-    }
-    let len = text.len();
-    let token: Vec<T> = text[1..(len-1)].split("|").map(|t| {
-        let t = t.trim();
-        closur(t)
-    }).collect::<Vec<_>>();
-    Some(ParsedResult{token, rest: rest})
+    let index = texts.find("\n")?;
+    let (text, rest) = (&texts[..index].trim_end(), &texts[(index+1)..]);
+    if !text.starts_with("|") || !text.ends_with("|") { return None }
+
+    let end = text.len()-1;
+    let token: Vec<T> = text[1..end].split("|")
+        .map(|text| closure(text.trim()))
+        .collect::<Vec<_>>();
+    Some(ParsedResult::new(token, rest))
 }
 
 fn header(texts: &str) -> Option<ParsedResult<Record>> {
@@ -24,17 +22,17 @@ fn header(texts: &str) -> Option<ParsedResult<Record>> {
         texts, &|txt| words(txt)
     )?;
     let record = Record(cells.token);
-    Some(ParsedResult{token: record, rest: cells.rest})
+    Some(ParsedResult::new(record, cells.rest))
 }
 
 fn align(texts: &str, num: usize) -> Option<ParsedResult<Vec<Align>>> {
-    let result = record(texts, &|text| align_parse(text.trim()))?;
+    let result = record(
+        texts, &|text| align_parse(text.trim())
+    )?;
     let aligns: Vec<Align> = result.token.into_iter()
         .filter_map(|opt| opt)
         .collect();
-    if aligns.len() != num {
-        return None
-    }
+    if aligns.len() != num { return None }
     Some(ParsedResult::new(aligns, result.rest))
 }
 
