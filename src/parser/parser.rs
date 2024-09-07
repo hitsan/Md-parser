@@ -25,12 +25,29 @@ pub struct Item(pub Words, pub Items);
 
 #[derive(Debug, PartialEq)]
 pub struct Items(pub Vec<Item>);
+#[macro_export]
+macro_rules! items {
+    () => {{
+        Items(vec!()) 
+    }};
+
+    ( $( $item:expr), *) => {{
+        let mut is = vec!();
+        $(
+            is.push($item);
+        )*
+        Items(is) 
+    }};
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Words(pub Vec<Word>);
-
 #[macro_export]
 macro_rules! words {
+    () => {{
+        panic!("No words!")
+    }};
+
     ( $( $word:expr), *) => {{
         let mut ws = vec!();
         $(

@@ -1,6 +1,6 @@
 use crate::parser::parser::*;
 use super::sentence::words;
-use crate::words;
+use crate::{words,items};
 
 fn count_tab(texts: &str) -> usize {
     texts.chars().take_while(|c| c ==&' ' ).count()/2
@@ -18,7 +18,7 @@ fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
     let words = words(&text);
     let space_num = count_tab(&rest);
     let (i, rest) = if space_num <= tab_num {
-        (Items(vec!()), rest)
+        (items!(), rest)
     } else {
         let c = items(&rest, space_num);
         (c.token, c.rest)
@@ -55,7 +55,7 @@ mod tests {
         let test_word = "- Hello World!\n";
         let n = Word::Normal("Hello World!".to_string());
         let w = words!(n);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let l = Item(w, items0);
         let rest = "";
         assert_eq!(item(&test_word, 0), Some(ParsedResult{token: l, rest}));
@@ -63,7 +63,7 @@ mod tests {
         let test_word = "- Hello World!";
         let n = Word::Normal("Hello World!".to_string());
         let w = words!(n);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let l = Item(w, items0);
         let rest = "";
         assert_eq!(item(&test_word, 0), Some(ParsedResult{token: l, rest}));
@@ -80,25 +80,25 @@ mod tests {
         let test_word = "- Hello\n- World\n- Rust";
         let n = Word::Normal("Hello".to_string());
         let w = words!(n);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let i0 = Item(w, items0);
 
         let n = Word::Normal("World".to_string());
         let w = words!(n);
-        let items1 = Items(vec!());
+        let items1 = items!();
         let i1 = Item(w, items1);
 
         let n = Word::Normal("Rust".to_string());
         let w = words!(n);
-        let items2 = Items(vec!());
+        let items2 = items!();
         let i2 = Item(w, items2);
 
-        let token = Items(vec!(i0, i1, i2));
+        let token = items!(i0, i1, i2);
         let rest = "";
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
 
         let test_word = "Rust";
-        let token = Items(vec!());
+        let token = items!();
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest: test_word});
     }
 
@@ -107,14 +107,14 @@ mod tests {
         let test_word = "- Hello\n  - World";
         let n = Word::Normal("World".to_string());
         let w = words!(n);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let i0 = Item(w, items0);
-        let child = Items(vec!(i0));
+        let child = items!(i0);
         let n = Word::Normal("Hello".to_string());
         let w = words!(n);
         let i1 = Item(w, child);
 
-        let token = Items(vec!(i1));
+        let token = items!(i1);
         let rest = "";
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
 
@@ -122,20 +122,20 @@ mod tests {
         let test_word = "- Hello\n  - World\n  - End";
         let world = Word::Normal("World".to_string());
         let world = words!(world);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let world_item = Item(world, items0);
 
         let end = Word::Normal("End".to_string());
         let end = words!(end);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let end_item = Item(end, items0);
 
-        let child = Items(vec!(world_item, end_item));
+        let child = items!(world_item, end_item);
         let n = Word::Normal("Hello".to_string());
         let w = words!(n);
         let i1 = Item(w, child);
 
-        let token = Items(vec!(i1));
+        let token = items!(i1);
         let rest = "";
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
 
@@ -143,45 +143,45 @@ mod tests {
         let test_word = "- Hello\n  - World\n- End";
         let world = Word::Normal("World".to_string());
         let world = words!(world);
-        let emp = Items(vec!());
+        let emp = items!();
         let world_item = Item(world, emp);
 
-        let child = Items(vec!(world_item));
+        let child = items!(world_item);
         let n = Word::Normal("Hello".to_string());
         let w = words!(n);
         let hello_item = Item(w, child);
 
         let end = Word::Normal("End".to_string());
         let end = words!(end);
-        let emp = Items(vec!());
+        let emp = items!();
         let end_item = Item(end, emp);
 
-        let token = Items(vec!(hello_item, end_item));
+        let token = items!(hello_item, end_item);
         let rest = "";
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
 
         let test_word = "- Hello\n  - World\n  - End\n- Reboot";
         let world = Word::Normal("World".to_string());
         let world = words!(world);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let world_item = Item(world, items0);
 
         let end = Word::Normal("End".to_string());
         let end = words!(end);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let end_item = Item(end, items0);
 
-        let child = Items(vec!(world_item, end_item));
+        let child = items!(world_item, end_item);
         let n = Word::Normal("Hello".to_string());
         let w = words!(n);
         let i1 = Item(w, child);
 
         let r = Word::Normal("Reboot".to_string());
         let w = words!(r);
-        let nul = Items(vec!());
+        let nul = items!();
         let item_r = Item(w, nul);
 
-        let token = Items(vec!(i1, item_r));
+        let token = items!(i1, item_r);
         let rest = "";
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
 
@@ -189,25 +189,25 @@ mod tests {
         let test_word = "- Hello\n  - World\n    - End\n- Reboot";
         let end = Word::Normal("End".to_string());
         let end = words!(end);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let end_item = Item(end, items0);
 
         let world = Word::Normal("World".to_string());
         let world = words!(world);
-        let items0 = Items(vec!(end_item));
+        let items0 = items!(end_item);
         let world_item = Item(world, items0);
 
-        let child = Items(vec!(world_item));
+        let child = items!(world_item);
         let n = Word::Normal("Hello".to_string());
         let w = words!(n);
         let i1 = Item(w, child);
 
         let r = Word::Normal("Reboot".to_string());
         let w = words!(r);
-        let nul = Items(vec!());
+        let nul = items!();
         let item_r = Item(w, nul);
 
-        let token = Items(vec!(i1, item_r));
+        let token = items!(i1, item_r);
         let rest = "";
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
     }
@@ -229,14 +229,14 @@ mod tests {
         let test_word = "- Hello\n  - World";
         let n = Word::Normal("World".to_string());
         let w = words!(n);
-        let items0 = Items(vec!());
+        let items0 = items!();
         let i0 = Item(w, items0);
-        let child = Items(vec!(i0));
+        let child = items!(i0);
         let n = Word::Normal("Hello".to_string());
         let w = words!(n);
         let i1 = Item(w, child);
 
-        let token = Md::List(Items(vec!(i1)));
+        let token = Md::List(items!(i1));
         let rest = "";
         assert_eq!(list(&test_word), Some(ParsedResult{token, rest}));
     }
