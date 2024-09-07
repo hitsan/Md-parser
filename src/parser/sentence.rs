@@ -55,10 +55,10 @@ fn normal(text: &str) -> Option<ParsedResult<Word>> {
 
 fn word(text: &str) -> ParsedResult<Word> {
     let parsers = vec!(underline, strike_though, bold, italic, normal);
-    let parsed_ret = parsers.iter().find_map(|f| f(text));
-    match parsed_ret {
-        Some(ret) => ret,
-        _ => panic!("parse err!")
+    if let Some(result) = parsers.iter().find_map(|f| f(text)) {
+        result
+    } else {
+        panic!("parse err!")
     }
 }
 
