@@ -59,6 +59,20 @@ macro_rules! words {
 
 #[derive(Debug, PartialEq)]
 pub struct Record(pub Vec<Words>);
+#[macro_export]
+macro_rules! record {
+    () => {{
+        panic!("No Vec<words>!")
+    }};
+
+    ( $( $words:expr), *) => {{
+        let mut rd = vec!();
+        $(
+            rd.push($words);
+        )*
+        Record(rd) 
+    }}
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Table {

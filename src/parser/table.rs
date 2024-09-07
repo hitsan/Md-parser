@@ -1,7 +1,7 @@
 use crate::parser::parser::*;
 use super::sentence::words;
 use std::collections::HashSet;
-use crate::words;
+use crate::{words,record};
 
 fn record<'a, T>(
     texts: &'a str,
@@ -110,7 +110,7 @@ mod tests {
         let a = words!(Word::Normal("A".to_string()));
         let b = words!(Word::Normal("B".to_string()));
         let c = words!(Word::Normal("C".to_string()));
-        let token = Record(vec!(a, b, c));
+        let token = record!(a, b, c);
         let rest = "";
         assert_eq!(header(&h), Some(ParsedResult{token, rest}));
 
@@ -121,7 +121,7 @@ mod tests {
         let a = words!(Word::Normal("".to_string()));
         let b = words!(Word::Normal("B".to_string()));
         let c = words!(Word::Normal("C".to_string()));
-        let token = Record(vec!(a, b, c));
+        let token = record!(a, b, c);
         let rest = "";
         assert_eq!(header(&h), Some(ParsedResult{token, rest}));
     }
@@ -146,15 +146,15 @@ mod tests {
         let a = words!(Word::Normal("A".to_string()));
         let b = words!(Word::Normal("B".to_string()));
         let c = words!(Word::Normal("C".to_string()));
-        let r0 = Record(vec!(a, b, c));
+        let r0 = record!(a, b, c);
         let a = words!(Word::Normal("a".to_string()));
         let b = words!(Word::Normal("b".to_string()));
         let c = words!(Word::Normal("c".to_string()));
-        let r1 = Record(vec!(a, b, c));
+        let r1 = record!(a, b, c);
         let j = words!(Word::Normal("j".to_string()));
         let k = words!(Word::Normal("k".to_string()));
         let l = words!(Word::Normal("l".to_string()));
-        let r2 = Record(vec!(j, k, l));
+        let r2 = record!(j, k, l);
         let record = vec!(r0, r1, r2);
         let rest = "";
         assert_eq!(records(&h, 3), Some(ParsedResult{token: record, rest}));
@@ -165,18 +165,18 @@ mod tests {
         let a = words!(Word::Normal("A".to_string()));
         let b = words!(Word::Normal("B".to_string()));
         let c = words!(Word::Normal("C".to_string()));
-        let he = Record(vec!(a, b, c));
+        let he = record!(a, b, c);
     
         let al = vec!(Align::Right, Align::Left, Align::Center);
     
         let a = words!(Word::Normal("a".to_string()));
         let b = words!(Word::Normal("b".to_string()));
         let c = words!(Word::Normal("c".to_string()));
-        let r1 = Record(vec!(a, b, c));
+        let r1 = record!(a, b, c);
         let j = words!(Word::Normal("j".to_string()));
         let k = words!(Word::Normal("k".to_string()));
         let l = words!(Word::Normal("l".to_string()));
-        let r2 = Record(vec!(j, k, l));
+        let r2 = record!(j, k, l);
         let re = vec!(r1, r2);
 
         let t = Table{header: he, align: al, records: re};
