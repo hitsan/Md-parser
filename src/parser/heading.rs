@@ -23,33 +23,28 @@ mod tests {
 
     #[test]
     fn test_heading() {
-        let test_word = "# Hello World!";
-        let token = words!(normal_word!("Hello World!"));
-        let token = Md::Heading(1, token);
-        assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
+        let words = words!(normal_word!("Hello World!"));
+        let token = Md::Heading(1, words);
+        assert_eq!(heading(&"# Hello World!"), Some(ParsedResult{token, rest: ""}));
 
-        let test_word = "#    Hello World!";
-        let token = words!(normal_word!("Hello World!"));
-        let token = Md::Heading(1, token);
-        assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
+        let words = words!(normal_word!("Hello World!"));
+        let token = Md::Heading(1, words);
+        assert_eq!(heading(&"#    Hello World!"), Some(ParsedResult{token, rest: ""}));
 
-        let test_word = "## Hello World!";
-        let token = words!(normal_word!("Hello World!"));
-        let token = Md::Heading(2, token);
-        assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
+        let words = words!(normal_word!("Hello World!"));
+        let token = Md::Heading(2, words);
+        assert_eq!(heading(&"## Hello World!"), Some(ParsedResult{token, rest: ""}));
 
-        let test_word = "### Hello World!";
-        let token = words!(normal_word!("Hello World!"));
-        let token = Md::Heading(3, token);
-        assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
+        let words = words!(normal_word!("Hello World!"));
+        let token = Md::Heading(3, words);
+        assert_eq!(heading(&"### Hello World!"), Some(ParsedResult{token, rest: ""}));
     }
 
     #[test]
     fn test_heading_multiline() {
-        let test_word = "# Hello \nWorld!";
-        let token = words!(normal_word!("Hello "));
-        let token = Md::Heading(1, token);
-        assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: "World!"}));
+        let words = words!(normal_word!("Hello "));
+        let token = Md::Heading(1, words);
+        assert_eq!(heading(&"# Hello \nWorld!"), Some(ParsedResult{token, rest: "World!"}));
     }
 
 }
