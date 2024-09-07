@@ -102,14 +102,15 @@ pub fn table(texts: &str) -> Option<ParsedResult<Md>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{words,record,normal_word};
 
     #[test]
     fn test_header() {
         let h = "| A | B | C | \n";
-        let a = Words(vec!(Word::Normal("A".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let token = Record(vec!(a, b, c));
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let token = record!(a, b, c);
         let rest = "";
         assert_eq!(header(&h), Some(ParsedResult{token, rest}));
 
@@ -117,10 +118,10 @@ mod tests {
         assert_eq!(header(&h), None);
 
         let h = "|  | B | C |\n";
-        let a = Words(vec!(Word::Normal("".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let token = Record(vec!(a, b, c));
+        let a = words!(normal_word!(""));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let token = record!(a, b, c);
         let rest = "";
         assert_eq!(header(&h), Some(ParsedResult{token, rest}));
     }
@@ -142,18 +143,18 @@ mod tests {
     #[test]
     fn test_records() {
         let h = "| A | B | C |\n| a | b | c |\n| j | k | l |\n";
-        let a = Words(vec!(Word::Normal("A".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let r0 = Record(vec!(a, b, c));
-        let a = Words(vec!(Word::Normal("a".to_string())));
-        let b = Words(vec!(Word::Normal("b".to_string())));
-        let c = Words(vec!(Word::Normal("c".to_string())));
-        let r1 = Record(vec!(a, b, c));
-        let j = Words(vec!(Word::Normal("j".to_string())));
-        let k = Words(vec!(Word::Normal("k".to_string())));
-        let l = Words(vec!(Word::Normal("l".to_string())));
-        let r2 = Record(vec!(j, k, l));
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let r0 = record!(a, b, c);
+        let a = words!(normal_word!("a"));
+        let b = words!(normal_word!("b"));
+        let c = words!(normal_word!("c"));
+        let r1 = record!(a, b, c);
+        let j = words!(normal_word!("j"));
+        let k = words!(normal_word!("k"));
+        let l = words!(normal_word!("l"));
+        let r2 = record!(j, k, l);
         let record = vec!(r0, r1, r2);
         let rest = "";
         assert_eq!(records(&h, 3), Some(ParsedResult{token: record, rest}));
@@ -161,21 +162,21 @@ mod tests {
     #[test]
     fn test_table() {
         let test = "| A | B | C | \n|-:|--|:-:|\n| a | b | c |\n| j | k | l |\n";
-        let a = Words(vec!(Word::Normal("A".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let he = Record(vec!(a, b, c));
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let he = record!(a, b, c);
     
         let al = vec!(Align::Right, Align::Left, Align::Center);
     
-        let a = Words(vec!(Word::Normal("a".to_string())));
-        let b = Words(vec!(Word::Normal("b".to_string())));
-        let c = Words(vec!(Word::Normal("c".to_string())));
-        let r1 = Record(vec!(a, b, c));
-        let j = Words(vec!(Word::Normal("j".to_string())));
-        let k = Words(vec!(Word::Normal("k".to_string())));
-        let l = Words(vec!(Word::Normal("l".to_string())));
-        let r2 = Record(vec!(j, k, l));
+        let a = words!(normal_word!("a"));
+        let b = words!(normal_word!("b"));
+        let c = words!(normal_word!("c"));
+        let r1 = record!(a, b, c);
+        let j = words!(normal_word!("j"));
+        let k = words!(normal_word!("k"));
+        let l = words!(normal_word!("l"));
+        let r2 = record!(j, k, l);
         let re = vec!(r1, r2);
 
         let t = Table{header: he, align: al, records: re};
