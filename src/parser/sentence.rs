@@ -1,5 +1,5 @@
 use crate::parser::parser::*;
-use crate::normal_word;
+use crate::{normal_word, words};
 
 fn emphasis<'a>(
     text: &'a str,
@@ -36,46 +36,47 @@ fn strike_though(text: &str) -> Option<ParsedResult<Word>> {
 
 fn normal(text: &str) -> Option<ParsedResult<Word>> {
     let keywords = ["~~", "__", "**", "*"];
-    let matched_prefix = keywords.iter().find_map(|k| {
-        let text = consume(text, k)?;
-        Some(ParsedResult::new(normal_word!(k), &text))
+    let matched = keywords.iter().find_map(|p| {
+        let rest = consume(text, p)?;
+        Some(ParsedResult::new(normal_word!(p), &rest))
     });
-    if let Some(ret) = matched_prefix {
-        return Some(ret)
+    if matched.is_some() {
+        return matched
     }
-    let indexs = keywords.iter().filter_map(|p| text.find(p));
-    if let Some(n) = indexs.min() {
+
+    let index = keywords.iter().filter_map(|p| text.find(p)).min();
+    if let Some(n) = index {
         let token = &text[..n];
         let rest = &text[n..];
         return Some(ParsedResult::new(normal_word!(token), rest))
     }
+
     let token = normal_word!(text);
     Some(ParsedResult::new(token,  ""))
 }
 
 fn word(text: &str) -> ParsedResult<Word> {
     let parsers = vec!(underline, strike_though, bold, italic, normal);
-    let parsed_ret = parsers.iter().find_map(|f| f(text));
-    match parsed_ret {
-        Some(ret) => ret,
-        _ => panic!("parse err!")
+    if let Some(result) = parsers.iter().find_map(|f| f(text)) {
+        result
+    } else {
+        panic!("parse err!")
     }
 }
 
-pub fn words(text: &str) -> Words {
-    let token = word(&text);
-    let mut rest = token.rest;
-    let mut tokens = vec!(token.token);
-    while !rest.is_empty() {
-        let ret = word(&rest);
-        tokens.push(ret.token);
-        rest = ret.rest;
+pub fn words(mut text: &str) -> Words {
+    if text.is_empty() { return words!(normal_word!(""))};
+    let mut tokens: Vec<Word> = vec!();
+    while !text.is_empty() {
+        let result = word(&text);
+        tokens.push(result.token);
+        text = result.rest;
     }
     Words(tokens)
 }
 
 pub fn sentence(texts: &str) -> Option<ParsedResult<Md>> {
-    if texts == "" { return None }
+    if texts.is_empty() { return None }
     let (text, rest) = if let Some(n) = texts.find("\n") {
         (&texts[..n], &texts[(n+1)..])
     } else {
