@@ -29,6 +29,7 @@ pub struct Items(pub Vec<Item>);
 #[derive(Debug, PartialEq)]
 pub struct Words(pub Vec<Word>);
 
+#[macro_export]
 macro_rules! words {
     ( $( $word:expr), *) => {{
         let mut ws = vec!();
