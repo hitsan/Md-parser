@@ -59,23 +59,17 @@ fn align_parse(text: &str) -> Option<Align> {
 }
 
 fn records(mut texts: &str, n: usize) -> Option<ParsedResult<Vec<Record>>> {
-    let mut record_list:Vec<Record> = vec!();
-    while let Some(cells) = record(
-        texts, &|txt| words(txt)) {
-        let record = cells.token;
-        println!("{:?}", &cells.rest);
-        if record.len()!=n {
-            break;
-        }
-        texts = cells.rest;
-        let record = Record(record);
-        record_list.push(record);
+    let mut records:Vec<Record> = vec!();
+    while let Some(result) = record(texts, &|text| words(text)) 
+    {
+        texts = result.rest;
+        let cells = result.token;
+        if cells.len()!=n { break; }
+        let record = Record(cells);
+        records.push(record);
     }
-    if record_list.is_empty() {
-        None
-    } else {
-        Some(ParsedResult::new(record_list, texts))
-    }
+    if records.is_empty() { return None }
+    Some(ParsedResult::new(records, texts))
 }
 fn record_len(record: &Record) -> usize {
     match record {
