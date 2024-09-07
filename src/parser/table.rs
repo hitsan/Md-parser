@@ -74,7 +74,7 @@ fn records(mut texts: &str, n: usize) -> Option<ParsedResult<Vec<Record>>> {
     if record_list.is_empty() {
         None
     } else {
-        Some(ParsedResult{token: record_list, rest: texts})
+        Some(ParsedResult::new(record_list, texts))
     }
 }
 fn len(record: &Record) -> usize {
@@ -84,19 +84,18 @@ fn len(record: &Record) -> usize {
 }
 
 pub fn table(texts: &str) -> Option<ParsedResult<Md>> {
-    let h = header(texts)?;
-    let texts = h.rest;
-    let h = h.token;
-    let num = len(&h);
-    let a = align(texts, num)?;
-    let texts = a.rest;
-    let a = a.token;
-    let r = records(texts, num)?;
-    let rest = r.rest;
-    let r = r.token;
-    let t = Table{header: h, align: a, records: r};
-    let t = Md::Table(Box::new(t));
-    Some(ParsedResult{token: t, rest})
+    let header_result = header(texts)?;
+    let header = header_result.token;
+    let column_num = len(&header);
+
+    let align_result = align(header_result.rest, column_num)?;
+    let align = align_result.token;
+
+    let records_result = records(align_result.rest, column_num)?;
+    let records = records_result.token;
+
+    let token = Md::Table(Box::new(Table{header, align, records}));
+    Some(ParsedResult::new(token, records_result.rest))
 }
 
 #[cfg(test)]
