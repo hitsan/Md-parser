@@ -29,6 +29,16 @@ pub struct Items(pub Vec<Item>);
 #[derive(Debug, PartialEq)]
 pub struct Words(pub Vec<Word>);
 
+macro_rules! words {
+    ( $( $word:expr), *) => {{
+        let mut ws = vec!();
+        $(
+            ws.push($word);
+        )*
+        Words(ws) 
+    }}
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Record(pub Vec<Words>);
 
@@ -180,5 +190,15 @@ mod tests {
 
         let token = Md::List(Items(vec!(i1)));
         assert_eq!(parse(&test_word), vec!(token));
+    }
+
+    #[test]
+    fn test_macros() {
+        let word0 = Word::Normal("hello".to_string());
+        let word1 = Word::Normal("world".to_string());
+
+        let hello = Word::Normal("hello".to_string());
+        let world = Word::Normal("world".to_string());
+        assert_eq!(words![word0, word1], Words(vec!(hello, world)));
     }
 }
