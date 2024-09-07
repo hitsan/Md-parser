@@ -36,19 +36,21 @@ fn strike_though(text: &str) -> Option<ParsedResult<Word>> {
 
 fn normal(text: &str) -> Option<ParsedResult<Word>> {
     let keywords = ["~~", "__", "**", "*"];
-    let matched_prefix = keywords.iter().find_map(|k| {
-        let text = consume(text, k)?;
-        Some(ParsedResult::new(normal_word!(k), &text))
+    let matched = keywords.iter().find_map(|p| {
+        let rest = consume(text, p)?;
+        Some(ParsedResult::new(normal_word!(p), &rest))
     });
-    if let Some(ret) = matched_prefix {
-        return Some(ret)
+    if matched.is_some() {
+        return matched
     }
-    let indexs = keywords.iter().filter_map(|p| text.find(p));
-    if let Some(n) = indexs.min() {
+
+    let index = keywords.iter().filter_map(|p| text.find(p)).min();
+    if let Some(n) = index {
         let token = &text[..n];
         let rest = &text[n..];
         return Some(ParsedResult::new(normal_word!(token), rest))
     }
+
     let token = normal_word!(text);
     Some(ParsedResult::new(token,  ""))
 }
