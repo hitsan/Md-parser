@@ -19,6 +19,12 @@ pub enum Word {
     StrikeThough(Words),
     Underline(Words),
 }
+#[macro_export]
+macro_rules! normal_word {
+    ($text:expr) => {{
+        Word::Normal($text.to_string())
+    }};
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Item(pub Words, pub Items);
@@ -128,7 +134,7 @@ mod tests {
     #[test]
     fn test_parser() {
         let test_word = "__**Hello World!**__";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let token = words!(Word::Bold(token));
         let token = Word::Underline(token);
         let token = words!(token);
@@ -136,7 +142,7 @@ mod tests {
         assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "**__Hello World!__**";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let token = words!(Word::Underline(token));
         let token = Word::Bold(token);
         let token = words!(token);
@@ -144,7 +150,7 @@ mod tests {
         assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "~~**__Hello World!__**~~";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let token = words!(Word::Underline(token));
         let token = words!(Word::Bold(token));
         let token = Word::StrikeThough(token);
@@ -153,29 +159,29 @@ mod tests {
         assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "Hello **World!**";
-        let hello = Word::Normal("Hello ".to_string());
-        let world = Word::Normal("World!".to_string());
+        let hello = normal_word!("Hello ".to_string());
+        let world = normal_word!("World!".to_string());
         let world = Word::Bold(words!(world));
         let token = words!(hello, world);
         let token = Md::Sentence(token);
         assert_eq!(parse(&test_word), vec!(token));
 
         let test_word = "# Hello World!";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         assert_eq!(parse(&test_word), vec!(Md::Heading(1, token)));
     }
 
     #[test]
     fn test_parsing_multiline() {
         let test_word = "# Hello World!\nrust parser\n**lines**";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let heading_token = Md::Heading(1, token);
 
-        let s_token = Word::Normal("rust parser".to_string());
+        let s_token = normal_word!("rust parser".to_string());
         let s_token = words!(s_token);
         let s_token = Md::Sentence(s_token);
         
-        let b_token = Word::Normal("lines".to_string());
+        let b_token = normal_word!("lines".to_string());
         let b_token = Word::Bold(words!(b_token));
         let b_token = words!(b_token);
         let b_token = Md::Sentence(b_token);
@@ -185,20 +191,20 @@ mod tests {
     #[test]
     fn test_table() {
         let test = "| A | B | C | \n|-:|--|:-:|\n| a | b | c |\n| j | k | l |\n";
-        let a = words!(Word::Normal("A".to_string()));
-        let b = words!(Word::Normal("B".to_string()));
-        let c = words!(Word::Normal("C".to_string()));
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
         let he = Record(vec!(a, b, c));
     
         let al = vec!(Align::Right, Align::Left, Align::Center);
     
-        let a = words!(Word::Normal("a".to_string()));
-        let b = words!(Word::Normal("b".to_string()));
-        let c = words!(Word::Normal("c".to_string()));
+        let a = words!(normal_word!("a"));
+        let b = words!(normal_word!("b"));
+        let c = words!(normal_word!("c"));
         let r1 = Record(vec!(a, b, c));
-        let j = words!(Word::Normal("j".to_string()));
-        let k = words!(Word::Normal("k".to_string()));
-        let l = words!(Word::Normal("l".to_string()));
+        let j = words!(normal_word!("j"));
+        let k = words!(normal_word!("k"));
+        let l = words!(normal_word!("l"));
         let r2 = Record(vec!(j, k, l));
         let re = vec!(r1, r2);
 
@@ -211,12 +217,12 @@ mod tests {
     #[test]
     fn test_list() {
         let test_word = "- Hello\n  - World";
-        let n = Word::Normal("World".to_string());
+        let n = normal_word!("World");
         let w = words!(n);
         let items0 = Items(vec!());
         let i0 = Item(w, items0);
         let child = Items(vec!(i0));
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let i1 = Item(w, child);
 
@@ -226,11 +232,11 @@ mod tests {
 
     #[test]
     fn test_macros() {
-        let word0 = Word::Normal("hello".to_string());
-        let word1 = Word::Normal("world".to_string());
+        let word0 = normal_word!("hello");
+        let word1 = normal_word!("world");
 
-        let hello = Word::Normal("hello".to_string());
-        let world = Word::Normal("world".to_string());
+        let hello = normal_word!("hello");
+        let world = normal_word!("world");
         assert_eq!(words!(word0, word1), words!(hello, world));
     }
 }

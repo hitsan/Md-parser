@@ -1,6 +1,6 @@
 use crate::parser::parser::*;
 use super::sentence::words;
-use crate::{words,items};
+use crate::{words,items,normal_word};
 
 fn count_tab(texts: &str) -> usize {
     texts.chars().take_while(|c| c ==&' ' ).count()/2
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn test_item() {
         let test_word = "- Hello World!\n";
-        let n = Word::Normal("Hello World!".to_string());
+        let n = normal_word!("Hello World!");
         let w = words!(n);
         let items0 = items!();
         let l = Item(w, items0);
@@ -61,7 +61,7 @@ mod tests {
         assert_eq!(item(&test_word, 0), Some(ParsedResult{token: l, rest}));
 
         let test_word = "- Hello World!";
-        let n = Word::Normal("Hello World!".to_string());
+        let n = normal_word!("Hello World!");
         let w = words!(n);
         let items0 = items!();
         let l = Item(w, items0);
@@ -78,17 +78,17 @@ mod tests {
     #[test]
     fn test_items() {
         let test_word = "- Hello\n- World\n- Rust";
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let items0 = items!();
         let i0 = Item(w, items0);
 
-        let n = Word::Normal("World".to_string());
+        let n = normal_word!("World");
         let w = words!(n);
         let items1 = items!();
         let i1 = Item(w, items1);
 
-        let n = Word::Normal("Rust".to_string());
+        let n = normal_word!("Rust");
         let w = words!(n);
         let items2 = items!();
         let i2 = Item(w, items2);
@@ -105,12 +105,12 @@ mod tests {
     #[test]
     fn test_nest_items() {
         let test_word = "- Hello\n  - World";
-        let n = Word::Normal("World".to_string());
+        let n = normal_word!("World");
         let w = words!(n);
         let items0 = items!();
         let i0 = Item(w, items0);
         let child = items!(i0);
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let i1 = Item(w, child);
 
@@ -120,18 +120,18 @@ mod tests {
 
 
         let test_word = "- Hello\n  - World\n  - End";
-        let world = Word::Normal("World".to_string());
+        let world = normal_word!("World");
         let world = words!(world);
         let items0 = items!();
         let world_item = Item(world, items0);
 
-        let end = Word::Normal("End".to_string());
+        let end = normal_word!("End");
         let end = words!(end);
         let items0 = items!();
         let end_item = Item(end, items0);
 
         let child = items!(world_item, end_item);
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let i1 = Item(w, child);
 
@@ -141,17 +141,17 @@ mod tests {
 
 
         let test_word = "- Hello\n  - World\n- End";
-        let world = Word::Normal("World".to_string());
+        let world = normal_word!("World");
         let world = words!(world);
         let emp = items!();
         let world_item = Item(world, emp);
 
         let child = items!(world_item);
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let hello_item = Item(w, child);
 
-        let end = Word::Normal("End".to_string());
+        let end = normal_word!("End");
         let end = words!(end);
         let emp = items!();
         let end_item = Item(end, emp);
@@ -161,22 +161,22 @@ mod tests {
         assert_eq!(items(&test_word, 0), ParsedResult{token, rest});
 
         let test_word = "- Hello\n  - World\n  - End\n- Reboot";
-        let world = Word::Normal("World".to_string());
+        let world = normal_word!("World");
         let world = words!(world);
         let items0 = items!();
         let world_item = Item(world, items0);
 
-        let end = Word::Normal("End".to_string());
+        let end = normal_word!("End");
         let end = words!(end);
         let items0 = items!();
         let end_item = Item(end, items0);
 
         let child = items!(world_item, end_item);
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let i1 = Item(w, child);
 
-        let r = Word::Normal("Reboot".to_string());
+        let r = normal_word!("Reboot");
         let w = words!(r);
         let nul = items!();
         let item_r = Item(w, nul);
@@ -187,22 +187,22 @@ mod tests {
 
 
         let test_word = "- Hello\n  - World\n    - End\n- Reboot";
-        let end = Word::Normal("End".to_string());
+        let end = normal_word!("End");
         let end = words!(end);
         let items0 = items!();
         let end_item = Item(end, items0);
 
-        let world = Word::Normal("World".to_string());
+        let world = normal_word!("World");
         let world = words!(world);
         let items0 = items!(end_item);
         let world_item = Item(world, items0);
 
         let child = items!(world_item);
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let i1 = Item(w, child);
 
-        let r = Word::Normal("Reboot".to_string());
+        let r = normal_word!("Reboot");
         let w = words!(r);
         let nul = items!();
         let item_r = Item(w, nul);
@@ -227,12 +227,12 @@ mod tests {
     #[test]
     fn test_list() {
         let test_word = "- Hello\n  - World";
-        let n = Word::Normal("World".to_string());
+        let n = normal_word!("World");
         let w = words!(n);
         let items0 = items!();
         let i0 = Item(w, items0);
         let child = items!(i0);
-        let n = Word::Normal("Hello".to_string());
+        let n = normal_word!("Hello");
         let w = words!(n);
         let i1 = Item(w, child);
 

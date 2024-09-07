@@ -1,6 +1,6 @@
 use crate::parser::parser::*;
 use super::sentence::words;
-use crate::words;
+use crate::{words,normal_word};
 
 pub fn heading(texts: &str) -> Option<ParsedResult<Md>> {
     ["#", "##", "###"].iter().find_map(|p| {
@@ -24,22 +24,22 @@ mod tests {
     #[test]
     fn test_heading() {
         let test_word = "# Hello World!";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let token = Md::Heading(1, token);
         assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
 
         let test_word = "#    Hello World!";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let token = Md::Heading(1, token);
         assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
 
         let test_word = "## Hello World!";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let token = Md::Heading(2, token);
         assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
 
         let test_word = "### Hello World!";
-        let token = words!(Word::Normal("Hello World!".to_string()));
+        let token = words!(normal_word!("Hello World!"));
         let token = Md::Heading(3, token);
         assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: ""}));
     }
@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn test_heading_multiline() {
         let test_word = "# Hello \nWorld!";
-        let token = words!(Word::Normal("Hello ".to_string()));
+        let token = words!(normal_word!("Hello "));
         let token = Md::Heading(1, token);
         assert_eq!(heading(&test_word), Some(ParsedResult{token, rest: "World!"}));
     }
