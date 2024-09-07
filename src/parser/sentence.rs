@@ -1,5 +1,5 @@
 use crate::parser::parser::*;
-use crate::normal_word;
+use crate::{normal_word, words};
 
 fn emphasis<'a>(
     text: &'a str,
@@ -62,20 +62,19 @@ fn word(text: &str) -> ParsedResult<Word> {
     }
 }
 
-pub fn words(text: &str) -> Words {
-    let token = word(&text);
-    let mut rest = token.rest;
-    let mut tokens = vec!(token.token);
-    while !rest.is_empty() {
-        let ret = word(&rest);
-        tokens.push(ret.token);
-        rest = ret.rest;
+pub fn words(mut text: &str) -> Words {
+    if text.is_empty() { return words!(normal_word!(""))};
+    let mut tokens: Vec<Word> = vec!();
+    while !text.is_empty() {
+        let result = word(&text);
+        tokens.push(result.token);
+        text = result.rest;
     }
     Words(tokens)
 }
 
 pub fn sentence(texts: &str) -> Option<ParsedResult<Md>> {
-    if texts == "" { return None }
+    if texts.is_empty() { return None }
     let (text, rest) = if let Some(n) = texts.find("\n") {
         (&texts[..n], &texts[(n+1)..])
     } else {
