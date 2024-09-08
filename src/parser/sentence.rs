@@ -77,11 +77,7 @@ pub fn words(mut text: &str) -> Words {
 
 pub fn sentence(texts: &str) -> Option<ParsedResult<Md>> {
     if texts.is_empty() { return None }
-    let (text, rest) = if let Some(n) = texts.find("\n") {
-        (&texts[..n], &texts[(n+1)..])
-    } else {
-        (texts, "")
-    };
+    let (text, rest) = split_first_linebreak(texts);
     let tokens = words(&text);
     Some(ParsedResult::new(Md::Sentence(tokens), rest))
 }

@@ -117,6 +117,14 @@ pub fn consume<'a>(text: &'a str, pattern: &'a str) -> Option<&'a str> {
     Some(&text[length..])
 }
 
+pub fn split_first_linebreak<'a>(texts: &'a str) -> (&'a str, &'a str) {
+    if let Some(n) = texts.find("\n") {
+        (&texts[..n], &texts[(n+1)..])
+    } else {
+        (texts, "")
+    }
+}
+
 pub fn parse(mut text: &str) -> Vec<Md> {
     let parsers = vec!(table, list, heading, sentence);
     let mut md: Vec<Md> = vec!();
