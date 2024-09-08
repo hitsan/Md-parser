@@ -9,8 +9,8 @@ fn emphasis<'a>(
     let text = consume(text, pattern)?;
     let index = text.find(pattern)?;
     if index == 0 { return  None }
-    let len = pattern.len() + index;
-    let (text, rest) = (&text[..index], &text[len..]);
+    let start = pattern.len() + index;
+    let (text, rest) = (&text[..index], &text[start..]);
     let token = em(words(text));
     Some(ParsedResult::new(token, rest))
 }
