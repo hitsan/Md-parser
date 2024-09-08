@@ -6,7 +6,7 @@ fn record<'a, T>(
     texts: &'a str,
     closure: &dyn Fn(&str)->T
 ) -> Option<ParsedResult<'a, Vec<T>>> {
-    let (text, rest) = split_first_linebreak(texts);
+    let (text, rest) = split_first_pattern(texts, "\n");
     let text = text.trim_end();
     if !text.starts_with("|") || !text.ends_with("|") { return None }
 

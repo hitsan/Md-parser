@@ -7,7 +7,7 @@ fn count_tab(texts: &str) -> usize {
 }
 
 fn item(texts: &str, tab_num: usize) -> Option<ParsedResult<Item>> {
-    let (text, rest) = split_first_linebreak(texts);
+    let (text, rest) = split_first_pattern(texts, "\n");
     let text = text.trim_start();
     let text = consume(text, "-")?;
     let text = space(text)?;

@@ -117,9 +117,10 @@ pub fn consume<'a>(text: &'a str, pattern: &'a str) -> Option<&'a str> {
     Some(&text[length..])
 }
 
-pub fn split_first_linebreak<'a>(texts: &'a str) -> (&'a str, &'a str) {
-    if let Some(n) = texts.find("\n") {
-        (&texts[..n], &texts[(n+1)..])
+pub fn split_first_pattern<'a>(texts: &'a str, pattern: &str) -> (&'a str, &'a str) {
+    if let Some(n) = texts.find(pattern) {
+        let len = pattern.len();
+        (&texts[..n], &texts[(n+len)..])
     } else {
         (texts, "")
     }
