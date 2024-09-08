@@ -1,4 +1,5 @@
 mod parser;
+mod emit;
 
 fn main() {
     let hello = "# Hello world!";
