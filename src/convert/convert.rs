@@ -19,12 +19,29 @@ fn convert_words<'a>(words: &'a Words) -> String {
         )
 }
 
-fn convert_header(record: &Record) -> String {
+fn convert_cells(record: &Record, tag: &str) -> String {
     record.0
         .iter()
         .fold(
             "".to_string(),
-            |html, words| format!("{}<tr>{}</tr>", html, convert_words(words))
+            |html, words| format!("{}<{}>{}</{}>", html, tag, convert_words(words), tag)
+        )
+}
+
+fn convert_header(record: &Record) -> String {
+    convert_cells(record, &"th")
+}
+
+fn convert_record(record: &Record) -> String {
+    convert_cells(record, &"td")
+}
+
+fn convert_records(records: &Vec<Record>) -> String {
+    records
+        .iter()
+        .fold(
+            "".to_string(),
+            |html, record| format!("{}<tr>{}</tr>\n", html, convert_record(record))
         )
 }
 
@@ -84,10 +101,28 @@ mod tests {
     }
 
     #[test]
-    fn test_record_to_html() {
+    fn test_header_to_html() {
         let hello = words!(normal_word!("hello"));
         let world = words!(normal_word!("world"));
         let header = Record(vec!(hello, world));
-        assert_eq!(convert_header(&header), "<tr>hello</tr><tr>world</tr>".to_string());
+        assert_eq!(convert_header(&header), "<th>hello</th><th>world</th>".to_string());
+    }
+
+    #[test]
+    fn test_record_to_html() {
+        let hello = words!(normal_word!("hello"));
+        let world = words!(normal_word!("world"));
+        let record = Record(vec!(hello, world));
+        assert_eq!(convert_record(&record), "<td>hello</td><td>world</td>".to_string());
+    }
+
+    #[test]
+    fn test_records_to_html() {
+        let hello = words!(normal_word!("hello"));
+        let record0 = Record(vec!(hello));
+        let world = words!(normal_word!("world"));
+        let record1 = Record(vec!(world));
+        let records = vec!(record0, record1);
+        assert_eq!(convert_records(&records), "<tr><td>hello</td></tr>\n<tr><td>world</td></tr>\n".to_string());
     }
 }
