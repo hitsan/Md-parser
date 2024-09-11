@@ -22,6 +22,7 @@ fn convert_words<'a>(words: &'a Words) -> String {
 fn to_html(md: Md) -> String {
     match md {
         Md::Heading(size, words) => format!("<h{}>{}</h{}>", size, convert_words(&words), size),
+        Md::Sentence(words) => convert_words(&words),
         _ => panic!("testteafdsaf")
     }
 }
@@ -36,6 +37,10 @@ mod tests {
         let words = words!(normal_word!("Hello"));
         let md = Md::Heading(1, words);
         assert_eq!(to_html(md), "<h1>Hello</h1>".to_string());
+
+        let words = words!(normal_word!("Hello"));
+        let md = Md::Sentence(words);
+        assert_eq!(to_html(md), "Hello".to_string());
     }
 
     #[test]
