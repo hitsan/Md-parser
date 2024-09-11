@@ -1,4 +1,4 @@
-use crate::parser::parser::{Md,Word,Words};
+use crate::parser::parser::*;
 
 fn convert_word<'a>(word: &'a Word) -> String {
     match word {
@@ -14,8 +14,17 @@ fn convert_words<'a>(words: &'a Words) -> String {
     words.0
         .iter()
         .fold(
-            "".to_string(), 
+            "".to_string(),
             |html, word| format!("{}{}", html, convert_word(word))
+        )
+}
+
+fn convert_header(record: &Record) -> String {
+    record.0
+        .iter()
+        .fold(
+            "".to_string(),
+            |html, words| format!("{}<tr>{}</tr>", html, convert_words(words))
         )
 }
 
@@ -72,5 +81,13 @@ mod tests {
         let bold = Word::Bold(words!(word1));
         let words = words!(word, bold);
         assert_eq!(convert_words(&words), "Hello<b>World!</b>".to_string());
+    }
+
+    #[test]
+    fn test_record_to_html() {
+        let hello = words!(normal_word!("hello"));
+        let world = words!(normal_word!("world"));
+        let header = Record(vec!(hello, world));
+        assert_eq!(convert_header(&header), "<tr>hello</tr><tr>world</tr>".to_string());
     }
 }
