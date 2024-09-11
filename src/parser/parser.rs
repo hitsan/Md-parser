@@ -22,6 +22,7 @@ pub enum Word {
 #[macro_export]
 macro_rules! normal_word {
     ($text:expr) => {{
+        use crate::parser::parser::Word;
         Word::Normal($text.to_string())
     }};
 }
@@ -38,6 +39,7 @@ macro_rules! items {
     }};
 
     ( $( $item:expr), *) => {{
+        use crate::parser::parser::Items;
         let mut is = vec!();
         $(
             is.push($item);
@@ -55,6 +57,7 @@ macro_rules! words {
     }};
 
     ( $( $word:expr), *) => {{
+        use crate::parser::parser::Words;
         let mut ws = vec!();
         $(
             ws.push($word);
@@ -72,6 +75,7 @@ macro_rules! record {
     }};
 
     ( $( $words:expr), *) => {{
+        use crate::parser::parser::Record;
         let mut rd = vec!();
         $(
             rd.push($words);
