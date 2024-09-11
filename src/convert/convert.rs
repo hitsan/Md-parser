@@ -11,10 +11,12 @@ fn convert_word<'a>(word: &'a Word) -> String {
 }
 
 fn convert_words<'a>(words: &'a Words) -> String {
-    match words.0.first() {
-        Some(val) => convert_word(val),
-        _ => panic!("illegal words!")
-    }
+    words.0
+        .iter()
+        .fold(
+            "".to_string(), 
+            |html, word| format!("{}{}", html, convert_word(word))
+        )
 }
 
 fn to_html(md: Md) -> String {
@@ -56,5 +58,14 @@ mod tests {
         let word = normal_word!("Hello");
         let line = Word::Underline(words!(word));
         assert_eq!(convert_word(&line), "<u>Hello</u>".to_string());
+    }
+
+    #[test]
+    fn test_words_to_html() {
+        let word = normal_word!("Hello");
+        let word1 = normal_word!("World!");
+        let bold = Word::Bold(words!(word1));
+        let words = words!(word, bold);
+        assert_eq!(convert_words(&words), "Hello<b>World!</b>".to_string());
     }
 }
