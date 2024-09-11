@@ -24,17 +24,17 @@ fn html(md: Md) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{normal_word,words};
 
     #[test]
     fn test_html() {
-        let word = Word::Normal("Hello".to_string());
-        let words = Words(vec!(word));
+        let words = words!(normal_word!("Hello"));
         let md = Md::Heading(1, words);
         assert_eq!(html(md), "<h1>Hello</h1>".to_string());
     }
 
     fn test_word() {
-        let word = Word::Normal("Hello".to_string());
+        let word = normal_word!("Hello");
         assert_eq!(convert_word(&word), &"Hello".to_string());
     }
 }
