@@ -14,7 +14,7 @@ fn convert_words<'a>(words: &'a Words) -> &'a String {
     }
 }
 
-fn html(md: Md) -> String {
+fn to_html(md: Md) -> String {
     match md {
         Md::Heading(size, words) => format!("<h{}>{}</h{}>", size, convert_words(&words), size),
         _ => panic!("testteafdsaf")
@@ -27,10 +27,10 @@ mod tests {
     use crate::{normal_word,words};
 
     #[test]
-    fn test_html() {
+    fn test_to_html() {
         let words = words!(normal_word!("Hello"));
         let md = Md::Heading(1, words);
-        assert_eq!(html(md), "<h1>Hello</h1>".to_string());
+        assert_eq!(to_html(md), "<h1>Hello</h1>".to_string());
     }
 
     fn test_word() {
