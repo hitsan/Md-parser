@@ -76,6 +76,7 @@ fn to_html(md: Md) -> String {
     match md {
         Md::Heading(size, words) => format!("<h{}>{}</h{}>", size, convert_words(&words), size),
         Md::Sentence(words) => convert_words(&words),
+        Md::Table(table) => convert_table(table),
         _ => panic!("testteafdsaf")
     }
 }
