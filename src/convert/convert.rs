@@ -29,20 +29,47 @@ fn convert_cells(record: &Record, tag: &str) -> String {
 }
 
 fn convert_header(record: &Record) -> String {
-    convert_cells(record, &"th")
+    record.0
+    .iter()
+    .fold(
+        "".to_string(),
+        |html, words| format!("{}<th>{}</th>", html, convert_words(words))
+    )
 }
 
-fn convert_record(record: &Record) -> String {
-    convert_cells(record, &"td")
+fn convert_record(record: &Record, aligns: &Vec<Align>) -> String {
+    record.0.iter().zip(aligns.iter())
+        .fold(
+            "".to_string(),
+            |html, (words, align)| {
+                let a = match align {
+                    Align::Right => "right",
+                    Align::Center => "center",
+                    Align::Left => "left",
+                };
+                format!("{}<td align=\"{}\">{}</td>", html, a, convert_words(words))
+            }
+        )
 }
 
-fn convert_records(records: &Vec<Record>) -> String {
+fn convert_records(records: &Vec<Record>, aligns: &Vec<Align>) -> String {
     records
         .iter()
         .fold(
             "".to_string(),
-            |html, record| format!("{}<tr>{}</tr>\n", html, convert_record(record))
+            |html, record| format!("{}<tr>{}</tr>\n", html, convert_record(record, &aligns))
         )
+}
+
+fn convert_table(table: Box<Table>) -> String {
+    let header = table.header;
+    let aligns = table.align;
+    let records = table.records;
+
+    let header = convert_header(&header);
+    let header = format!("<tr>{}</tr>", header);
+    let records = convert_records(&records, &aligns);
+    format!("<table>\n{}\n{}</table>\n", header, records)
 }
 
 fn to_html(md: Md) -> String {
@@ -113,7 +140,14 @@ mod tests {
         let hello = words!(normal_word!("hello"));
         let world = words!(normal_word!("world"));
         let record = Record(vec!(hello, world));
-        assert_eq!(convert_record(&record), "<td>hello</td><td>world</td>".to_string());
+        let align = vec!(Align::Left, Align::Left);
+        assert_eq!(convert_record(&record, &align), "<td align=\"left\">hello</td><td align=\"left\">world</td>".to_string());
+
+        let hello = words!(normal_word!("hello"));
+        let world = words!(normal_word!("world"));
+        let record = Record(vec!(hello, world));
+        let align = vec!(Align::Center, Align::Right);
+        assert_eq!(convert_record(&record, &align), "<td align=\"center\">hello</td><td align=\"right\">world</td>".to_string());
     }
 
     #[test]
@@ -123,6 +157,19 @@ mod tests {
         let world = words!(normal_word!("world"));
         let record1 = Record(vec!(world));
         let records = vec!(record0, record1);
-        assert_eq!(convert_records(&records), "<tr><td>hello</td></tr>\n<tr><td>world</td></tr>\n".to_string());
+        let aligns = vec!(Align::Left);
+        assert_eq!(convert_records(&records, &aligns), "<tr><td align=\"left\">hello</td></tr>\n<tr><td align=\"left\">world</td></tr>\n".to_string());
+    }
+
+    #[test]
+    fn test_table_to_html() {
+        let hello = words!(normal_word!("hello"));
+        let header = Record(vec!(hello));
+        let world = words!(normal_word!("world"));
+        let record = Record(vec!(world));
+        let records = vec!(record);
+        let aligns = vec!(Align::Left);
+        let table = Box::new(Table{header, align: aligns, records});
+        assert_eq!(convert_table(table), "<table>\n<tr><th>hello</th></tr>\n<tr><td align=\"left\">world</td></tr>\n</table>\n".to_string());
     }
 }
