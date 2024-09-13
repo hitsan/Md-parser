@@ -93,7 +93,7 @@ fn convert_items(items: &Items) -> String {
     format!("<ul>\n{}</ul>\n", items)
 }
 
-pub fn to_html(md: &Md) -> String {
+fn to_html(md: &Md) -> String {
     match md {
         Md::Heading(size, words) => format!("<h{}>{}</h{}>", size, convert_words(&words), size),
         Md::Sentence(words) => convert_words(&words),
@@ -103,10 +103,29 @@ pub fn to_html(md: &Md) -> String {
     }
 }
 
+pub fn mds_to_html(mds: &Vec<Md>) -> String {
+    let strings = mds.iter().map(|md| to_html(md));
+    let strings: Vec<String> = strings.collect();
+    strings.join("\n")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{normal_word,words,items};
+
+    #[test]
+    fn test_mds_to_html() {
+        let words = words!(normal_word!("Heading"));
+        let heading = Md::Heading(1, words);
+        let words = words!(normal_word!("Hello"));
+        let hello_sentence = Md::Sentence(words);
+        let words = words!(normal_word!("World"));
+        let world_sentence = Md::Sentence(words);
+
+        let mds = vec!(heading, hello_sentence, world_sentence);
+        assert_eq!(mds_to_html(&mds), "<h1>Heading</h1>\nHello\nWorld".to_string());
+    }
 
     #[test]
     fn test_to_html() {
