@@ -1,4 +1,5 @@
 use crate::parser::parser::*;
+use crate::{normal_word, words};
 
 fn emphasis<'a>(
     text: &'a str,
@@ -8,9 +9,10 @@ fn emphasis<'a>(
     let text = consume(text, pattern)?;
     let index = text.find(pattern)?;
     if index == 0 { return  None }
-    let tokens = words(&text[..index]);
-    let len = pattern.len();
-    Some(ParsedResult::new(em(tokens), &text[(index+len)..]))
+    let start = pattern.len() + index;
+    let (text, rest) = (&text[..index], &text[start..]);
+    let token = em(words(text));
+    Some(ParsedResult::new(token, rest))
 }
 
 fn italic(text: &str) -> Option<ParsedResult<Word>> {
@@ -35,51 +37,48 @@ fn strike_though(text: &str) -> Option<ParsedResult<Word>> {
 
 fn normal(text: &str) -> Option<ParsedResult<Word>> {
     let keywords = ["~~", "__", "**", "*"];
-    let matched_prefix = keywords.iter().find_map(|k| {
-        let text = consume(text, k)?;
-        Some(ParsedResult::new(Word::Normal(k.to_string()), &text))
+    let matched = keywords.iter().find_map(|p| {
+        let rest = consume(text, p)?;
+        Some(ParsedResult::new(normal_word!(p), &rest))
     });
-    if let Some(ret) = matched_prefix {
-        return Some(ret)
+    if matched.is_some() {
+        return matched
     }
-    let indexs = keywords.iter().filter_map(|p| text.find(p));
-    if let Some(n) = indexs.min() {
+
+    let index = keywords.iter().filter_map(|p| text.find(p)).min();
+    if let Some(n) = index {
         let token = &text[..n];
         let rest = &text[n..];
-        return Some(ParsedResult::new(Word::Normal(token.to_string()), rest))
+        return Some(ParsedResult::new(normal_word!(token), rest))
     }
-    let token = Word::Normal(text.to_string());
+
+    let token = normal_word!(text);
     Some(ParsedResult::new(token,  ""))
 }
 
 fn word(text: &str) -> ParsedResult<Word> {
     let parsers = vec!(underline, strike_though, bold, italic, normal);
-    let parsed_ret = parsers.iter().find_map(|f| f(text));
-    match parsed_ret {
-        Some(ret) => ret,
-        _ => panic!("parse err!")
+    if let Some(result) = parsers.iter().find_map(|f| f(text)) {
+        result
+    } else {
+        panic!("parse err!")
     }
 }
 
-pub fn words(text: &str) -> Words {
-    let token = word(&text);
-    let mut rest = token.rest;
-    let mut tokens = vec!(token.token);
-    while !rest.is_empty() {
-        let ret = word(&rest);
-        tokens.push(ret.token);
-        rest = ret.rest;
+pub fn words(mut text: &str) -> Words {
+    if text.is_empty() { return words!(normal_word!(""))};
+    let mut tokens: Vec<Word> = vec!();
+    while !text.is_empty() {
+        let result = word(&text);
+        tokens.push(result.token);
+        text = result.rest;
     }
     Words(tokens)
 }
 
 pub fn sentence(texts: &str) -> Option<ParsedResult<Md>> {
-    if texts == "" { return None }
-    let (text, rest) = if let Some(n) = texts.find("\n") {
-        (&texts[..n], &texts[(n+1)..])
-    } else {
-        (texts, "")
-    };
+    if texts.is_empty() { return None }
+    let (text, rest) = split_first_pattern(texts, "\n");
     let tokens = words(&text);
     Some(ParsedResult::new(Md::Sentence(tokens), rest))
 }
@@ -87,182 +86,157 @@ pub fn sentence(texts: &str) -> Option<ParsedResult<Md>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{words,normal_word};
 
     #[test]
     fn test_sentence() {
-        let test_word = "Hello World!";
-        let token = Word::Normal("Hello World!".to_string());
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"Hello World!"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_text() {
-        let test_word = "Hello World!";
-        let token = Word::Normal("Hello World!".to_string());
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"Hello World!"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_italic() {
-        let test_word = "*Hello World!*";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Word::Italic(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let words = words!(Word::Italic(words));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"*Hello World!*"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_bold() {
-        let test_word = "**Hello World!**";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Word::Bold(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let words = words!(Word::Bold(words));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"**Hello World!**"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_strike_though() {
-        let test_word = "~~Hello World!~~";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Word::StrikeThough(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let words = words!(Word::StrikeThough(words));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"~~Hello World!~~"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_underline() {
-        let test_word = "__Hello World!__";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Word::Underline(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let words = words!(Word::Underline(words));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"__Hello World!__"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_mix() {
-        let test_word = "__**Hello World!**__";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Words(vec!(Word::Bold(token)));
-        let token = Word::Underline(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let words = words!(Word::Bold(words));
+        let words = words!(Word::Underline(words));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"__**Hello World!**__"), Some(ParsedResult{token, rest}));
 
-        let test_word = "**__Hello World!__**";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Words(vec!(Word::Underline(token)));
-        let token = Word::Bold(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let words = words!(Word::Underline(words));
+        let words = words!(Word::Bold(words));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"**__Hello World!__**"), Some(ParsedResult{token, rest}));
 
-        let test_word = "~~**__Hello World!__**~~";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Words(vec!(Word::Underline(token)));
-        let token = Words(vec!(Word::Bold(token)));
-        let token = Word::StrikeThough(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
+        let words = words!(normal_word!("Hello World!"));
+        let words = words!(Word::Underline(words));
+        let words = words!(Word::Bold(words));
+        let words = words!(Word::StrikeThough(words));
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"~~**__Hello World!__**~~"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_text_vec() {
-        let test_word = "Hello **World!**";
-        let hello = Word::Normal("Hello ".to_string());
-        let world = Word::Normal("World!".to_string());
-        let world = Word::Bold(Words(vec!(world)));
-        let token = Words(vec!(hello, world));
-        let token = Md::Sentence(token);
-        let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        // let word0 = normal_word!("Hello ");
+        // let word1 = Word::Bold(words!(normal_word!("World!")));
+        // let words = words!(word0, word1);
+        // let token = Md::Sentence(words);
+        // let rest = "";
+        // assert_eq!(sentence(&"Hello **World!**"), Some(ParsedResult{token, rest}));
 
-        let test_word = "Hello **World!";
-        let hello = Word::Normal("Hello ".to_string());
-        let ast = Word::Normal("**".to_string());
-        let world = Word::Normal("World!".to_string());
-        let token = Words(vec!(hello, ast, world));
-        let token = Md::Sentence(token);
+        let word0 = normal_word!("Hello ");
+        let word1 = normal_word!("**");
+        let word2 = normal_word!("World!");
+        let words = words!(word0, word1, word2);
+        let token = Md::Sentence(words);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"Hello **World!"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_text_abnormal() {
-        let test_word = "Hello ****World!";
-        let hello = Word::Normal("Hello ".to_string());
-        let ast = Word::Normal("**".to_string());
-        let ast1 = Word::Normal("**".to_string());
-        let world = Word::Normal("World!".to_string());
+        let word0 = normal_word!("Hello ");
+        let word1 = normal_word!("**");
+        let word2 = normal_word!("**");
+        let word3 = normal_word!("World!");
+        let words = words!(word0, word1, word2, word3);
+        let token = Md::Sentence(words);
+        let rest = "";
+        assert_eq!(sentence(&"Hello ****World!"), Some(ParsedResult{token, rest}));
 
-        let token = Words(vec!(hello, ast, ast1, world));
+        let word0 = normal_word!("Hello ");
+        let word1 = normal_word!("**");
+        let word2 = normal_word!("~~");
+        let word3 = normal_word!("World!");
+        let words = words!(word0, word1, word2, word3);
+        let token = Md::Sentence(words);
+        let rest = "";
+        assert_eq!(sentence(&"Hello **~~World!"), Some(ParsedResult{token, rest}));
+
+        let word0 = normal_word!("~~");
+        let word1 = normal_word!("World!");
+        let bold = Word::Bold(words!(word0, word1));
+        let normal = normal_word!("Hello ");
+        let words = words!(normal, bold);
+        let token = Md::Sentence(words);
+        let rest = "";
+        assert_eq!(sentence(&"Hello **~~World!**"), Some(ParsedResult{token, rest}));
+
+        let strike = normal_word!("~~");
+        let wor = normal_word!("Wor");
+        let ld = normal_word!("ld!");
+        let un = Word::Underline(words!(ld));
+        let bold = Word::Bold(words!(strike, wor, un));
+        let hello = normal_word!("Hello ");
+        let token = words!(hello, bold);
         let token = Md::Sentence(token);
         let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
-
-        let test_word = "Hello **~~World!";
-        let hello = Word::Normal("Hello ".to_string());
-        let ast = Word::Normal("**".to_string());
-        let strike = Word::Normal("~~".to_string());
-        let world = Word::Normal("World!".to_string());
-        let token = Words(vec!(hello, ast, strike, world));
-        let token = Md::Sentence(token);
-        let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
-
-        let test_word = "Hello **~~World!**";
-        let hello = Word::Normal("Hello ".to_string());
-        let strike = Word::Normal("~~".to_string());
-        let world = Word::Normal("World!".to_string());
-        let bo = Word::Bold(Words(vec!(strike, world)));
-        let token = Words(vec!(hello, bo));
-        let token = Md::Sentence(token);
-        let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
-
-        let test_word = "Hello **~~Wor__ld!__**";
-        let hello = Word::Normal("Hello ".to_string());
-        let strike = Word::Normal("~~".to_string());
-        let wor = Word::Normal("Wor".to_string());
-        let ld = Word::Normal("ld!".to_string());
-        let un = Word::Underline(Words(vec!(ld)));
-        let bo = Word::Bold(Words(vec!(strike, wor, un)));
-        let token = Words(vec!(hello, bo));
-        let token = Md::Sentence(token);
-        let rest = "";
-        assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
+        assert_eq!(sentence(&"Hello **~~Wor__ld!__**"), Some(ParsedResult{token, rest}));
     }
 
     #[test]
     fn test_text_multiline() {
         let test_word = "Hello\n World!";
-        let token = Word::Normal("Hello".to_string());
-        let token = Words(vec!(token));
+        let token = normal_word!("Hello");
+        let token = words!(token);
         let token = Md::Sentence(token);
         let rest = " World!";
         assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));
 
         let test_word = "**Hello**\n World!";
-        let token = Word::Normal("Hello".to_string());
-        let token = Word::Bold(Words(vec!(token)));
-        let token = Words(vec!(token));
+        let token = normal_word!("Hello");
+        let token = Word::Bold(words!(token));
+        let token = words!(token);
         let token = Md::Sentence(token);
         let rest = " World!";
         assert_eq!(sentence(&test_word), Some(ParsedResult{token, rest}));

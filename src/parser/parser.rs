@@ -19,18 +19,70 @@ pub enum Word {
     StrikeThough(Words),
     Underline(Words),
 }
+#[macro_export]
+macro_rules! normal_word {
+    ($text:expr) => {{
+        use crate::parser::parser::Word;
+        Word::Normal($text.to_string())
+    }};
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Item(pub Words, pub Items);
 
 #[derive(Debug, PartialEq)]
 pub struct Items(pub Vec<Item>);
+#[macro_export]
+macro_rules! items {
+    () => {{
+        Items(vec!()) 
+    }};
+
+    ( $( $item:expr), *) => {{
+        use crate::parser::parser::Items;
+        let mut is = vec!();
+        $(
+            is.push($item);
+        )*
+        Items(is) 
+    }};
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Words(pub Vec<Word>);
+#[macro_export]
+macro_rules! words {
+    () => {{
+        panic!("No words!")
+    }};
+
+    ( $( $word:expr), *) => {{
+        use crate::parser::parser::Words;
+        let mut ws = vec!();
+        $(
+            ws.push($word);
+        )*
+        Words(ws) 
+    }}
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Record(pub Vec<Words>);
+#[macro_export]
+macro_rules! record {
+    () => {{
+        panic!("No Vec<words>!")
+    }};
+
+    ( $( $words:expr), *) => {{
+        use crate::parser::parser::Record;
+        let mut rd = vec!();
+        $(
+            rd.push($words);
+        )*
+        Record(rd) 
+    }}
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Table {
@@ -69,6 +121,15 @@ pub fn consume<'a>(text: &'a str, pattern: &'a str) -> Option<&'a str> {
     Some(&text[length..])
 }
 
+pub fn split_first_pattern<'a>(texts: &'a str, pattern: &str) -> (&'a str, &'a str) {
+    if let Some(n) = texts.find(pattern) {
+        let len = pattern.len();
+        (&texts[..n], &texts[(n+len)..])
+    } else {
+        (texts, "")
+    }
+}
+
 pub fn parse(mut text: &str) -> Vec<Md> {
     let parsers = vec!(table, list, heading, sentence);
     let mut md: Vec<Md> = vec!();
@@ -85,100 +146,81 @@ mod tests {
 
     #[test]
     fn test_parser() {
-        let test_word = "__**Hello World!**__";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Words(vec!(Word::Bold(token)));
-        let token = Word::Underline(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), vec!(token));
+        let normal = words!(normal_word!("Hello World!"));
+        let bold = words!(Word::Bold(normal));
+        let bold_line = Word::Underline(bold);
+        let words = words!(bold_line);
+        let md = Md::Sentence(words);
+        assert_eq!(parse(&"__**Hello World!**__"), vec!(md));
 
-        let test_word = "**__Hello World!__**";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Words(vec!(Word::Underline(token)));
-        let token = Word::Bold(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), vec!(token));
+        let normal = words!(normal_word!("Hello World!"));
+        let line = words!(Word::Underline(normal));
+        let line_bold = Word::Bold(line);
+        let words = words!(line_bold);
+        let md = Md::Sentence(words);
+        assert_eq!(parse(&"**__Hello World!__**"), vec!(md));
 
-        let test_word = "~~**__Hello World!__**~~";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let token = Words(vec!(Word::Underline(token)));
-        let token = Words(vec!(Word::Bold(token)));
-        let token = Word::StrikeThough(token);
-        let token = Words(vec!(token));
-        let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), vec!(token));
+        let normal = words!(normal_word!("Hello World!"));
+        let line_normal = words!(Word::Underline(normal));
+        let bold_line_normal = words!(Word::Bold(line_normal));
+        let strike_bold_line_normal = words!(Word::StrikeThough(bold_line_normal));
+        let md = Md::Sentence(strike_bold_line_normal);
+        assert_eq!(parse(&"~~**__Hello World!__**~~"), vec!(md));
 
-        let test_word = "Hello **World!**";
-        let hello = Word::Normal("Hello ".to_string());
-        let world = Word::Normal("World!".to_string());
-        let world = Word::Bold(Words(vec!(world)));
-        let token = Words(vec!(hello, world));
-        let token = Md::Sentence(token);
-        assert_eq!(parse(&test_word), vec!(token));
+        let hello = normal_word!("Hello ");
+        let world = Word::Bold(words!(normal_word!("World!")));
+        let word = words!(hello, world);
+        let md = Md::Sentence(word);
+        assert_eq!(parse(&"Hello **World!**"), vec!(md));
 
-        let test_word = "# Hello World!";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        assert_eq!(parse(&test_word), vec!(Md::Heading(1, token)));
+        let normal = words!(normal_word!("Hello World!"));
+        let md = Md::Heading(1, normal);
+        assert_eq!(parse(&"# Hello World!"), vec!(md));
     }
 
     #[test]
     fn test_parsing_multiline() {
-        let test_word = "# Hello World!\nrust parser\n**lines**";
-        let token = Words(vec!(Word::Normal("Hello World!".to_string())));
-        let heading_token = Md::Heading(1, token);
+        let hello_world = words!(normal_word!("Hello World!"));
+        let head: Md = Md::Heading(1, hello_world);
 
-        let s_token = Word::Normal("rust parser".to_string());
-        let s_token = Words(vec!(s_token));
-        let s_token = Md::Sentence(s_token);
+        let words = words!(normal_word!("rust parser"));
+        let sentence = Md::Sentence(words);
         
-        let b_token = Word::Normal("lines".to_string());
-        let b_token = Word::Bold(Words(vec!(b_token)));
-        let b_token = Words(vec!(b_token));
-        let b_token = Md::Sentence(b_token);
+        let bold = words!(Word::Bold(words!(normal_word!("lines"))));
+        let bold_sentence = Md::Sentence(bold);
 
-        assert_eq!(parse(&test_word), vec!(heading_token, s_token, b_token));
+        let mds = vec!(head, sentence, bold_sentence);
+        assert_eq!(parse(&"# Hello World!\nrust parser\n**lines**"), mds);
     }
     #[test]
     fn test_table() {
-        let test = "| A | B | C | \n|-:|--|:-:|\n| a | b | c |\n| j | k | l |\n";
-        let a = Words(vec!(Word::Normal("A".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let he = Record(vec!(a, b, c));
-    
-        let al = vec!(Align::Right, Align::Left, Align::Center);
-    
-        let a = Words(vec!(Word::Normal("a".to_string())));
-        let b = Words(vec!(Word::Normal("b".to_string())));
-        let c = Words(vec!(Word::Normal("c".to_string())));
-        let r1 = Record(vec!(a, b, c));
-        let j = Words(vec!(Word::Normal("j".to_string())));
-        let k = Words(vec!(Word::Normal("k".to_string())));
-        let l = Words(vec!(Word::Normal("l".to_string())));
-        let r2 = Record(vec!(j, k, l));
-        let re = vec!(r1, r2);
-
-        let t = Table{header: he, align: al, records: re};
-        let t = Md::Table(Box::new(t));
-
-        assert_eq!(parse(&test), vec!(t));
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let header = Record(vec!(a, b, c));
+        let align = vec!(Align::Right, Align::Left, Align::Center);
+        let d = words!(normal_word!("d"));
+        let e = words!(normal_word!("e"));
+        let f = words!(normal_word!("f"));
+        let record0 = Record(vec!(d, e, f));
+        let j = words!(normal_word!("j"));
+        let k = words!(normal_word!("k"));
+        let l = words!(normal_word!("l"));
+        let record1 = Record(vec!(j, k, l));
+        let records = vec!(record0, record1);
+        let md = Md::Table(Box::new(Table{header, align, records}));
+        let test_word = "| A | B | C | \n|-:|--|:-:|\n| d | e | f |\n| j | k | l |\n";
+        assert_eq!(parse(&test_word), vec!(md));
     }
 
     #[test]
     fn test_list() {
-        let test_word = "- Hello\n  - World";
-        let n = Word::Normal("World".to_string());
-        let w = Words(vec!(n));
-        let items0 = Items(vec!());
-        let i0 = Item(w, items0);
-        let child = Items(vec!(i0));
-        let n = Word::Normal("Hello".to_string());
-        let w = Words(vec!(n));
-        let i1 = Item(w, child);
-
-        let token = Md::List(Items(vec!(i1)));
-        assert_eq!(parse(&test_word), vec!(token));
+        let world = words!(normal_word!("World"));
+        let item0 = Item(world, items!());
+        let children = items!(item0);
+        let hello = words!(normal_word!("Hello"));
+        let item = Item(hello, children);
+        let md = Md::List(items!(item));
+        assert_eq!(parse(&"- Hello\n  - World"), vec!(md));
     }
 }

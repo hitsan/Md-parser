@@ -1,4 +1,4 @@
 /target
-test.md
+*.md
 *.html
 .env

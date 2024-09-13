@@ -4,19 +4,17 @@ use std::collections::HashSet;
 
 fn record<'a, T>(
     texts: &'a str,
-    closur: &dyn Fn(&str)->T
+    closure: &dyn Fn(&str)->T
 ) -> Option<ParsedResult<'a, Vec<T>>> {
-    let n = texts.find("\n")?;
-    let (text, rest) = (&texts[..n].trim_end(), &texts[(n+1)..]);
-    if !text.starts_with("|") || !text.ends_with("|") {
-        return None
-    }
-    let len = text.len();
-    let token: Vec<T> = text[1..(len-1)].split("|").map(|t| {
-        let t = t.trim();
-        closur(t)
-    }).collect::<Vec<_>>();
-    Some(ParsedResult{token, rest: rest})
+    let (text, rest) = split_first_pattern(texts, "\n");
+    let text = text.trim_end();
+    if !text.starts_with("|") || !text.ends_with("|") { return None }
+
+    let end = text.len()-1;
+    let token: Vec<T> = text[1..end].split("|")
+        .map(|text| closure(text.trim()))
+        .collect::<Vec<_>>();
+    Some(ParsedResult::new(token, rest))
 }
 
 fn header(texts: &str) -> Option<ParsedResult<Record>> {
@@ -24,163 +22,140 @@ fn header(texts: &str) -> Option<ParsedResult<Record>> {
         texts, &|txt| words(txt)
     )?;
     let record = Record(cells.token);
-    Some(ParsedResult{token: record, rest: cells.rest})
+    Some(ParsedResult::new(record, cells.rest))
 }
 
 fn align(texts: &str, num: usize) -> Option<ParsedResult<Vec<Align>>> {
-    let cells = record(
-        texts, 
-        &|txt| align_parse(txt.trim()))?;
-    let token = cells.token;
-    let aligns: Vec<Align> = token.into_iter()
+    let result = record(
+        texts, &|text| align_parse(text.trim())
+    )?;
+    let aligns: Vec<Align> = result.token.into_iter()
         .filter_map(|opt| opt)
         .collect();
-    if aligns.len() == num {
-        Some(ParsedResult{token: aligns, rest: cells.rest})        
-    } else {
-        None
-    }
+    if aligns.len() != num { return None }
+    Some(ParsedResult::new(aligns, result.rest))
 }
 
 fn align_parse(text: &str) -> Option<Align> {
     let l = text.starts_with(":");
     let r = text.ends_with(":");
     let is_only_hyphen = |text: &str| {
-        let p: HashSet<char> = text.chars().collect();
-        p.len() == 1 && p.contains(&'-')
+        let chars: HashSet<char> = text.chars().collect();
+        chars.len() == 1 && chars.contains(&'-')
     };
     match (l, r) {
-        (true, true) if is_only_hyphen(&text[1..text.len()-1]) => Some(Align::Center),
-        (true, false) if is_only_hyphen(&text[1..]) => Some(Align::Left),
-        (false, true) if is_only_hyphen(&text[..text.len()-1]) => Some(Align::Right),
-        (false, false) if is_only_hyphen(&text) => Some(Align::Left),
+        (false, false) if is_only_hyphen(&text)                        => Some(Align::Left),
+        (false, true)  if is_only_hyphen(&text[..text.len()-1])  => Some(Align::Right),
+        (true, false)  if is_only_hyphen(&text[1..])             => Some(Align::Left),
+        (true, true)   if is_only_hyphen(&text[1..text.len()-1]) => Some(Align::Center),
         _ => None,
     }
 }
 
 fn records(mut texts: &str, n: usize) -> Option<ParsedResult<Vec<Record>>> {
-    let mut record_list:Vec<Record> = vec!();
-    while let Some(cells) = record(
-        texts, &|txt| words(txt)) {
-        let record = cells.token;
-        println!("{:?}", &cells.rest);
-        if record.len()!=n {
-            break;
-        }
-        texts = cells.rest;
-        let record = Record(record);
-        record_list.push(record);
+    let mut records:Vec<Record> = vec!();
+    while let Some(result) = record(texts, &|text| words(text)) 
+    {
+        texts = result.rest;
+        let cells = result.token;
+        if cells.len()!=n { break; }
+        let record = Record(cells);
+        records.push(record);
     }
-    if record_list.is_empty() {
-        None
-    } else {
-        Some(ParsedResult{token: record_list, rest: texts})
-    }
+    if records.is_empty() { return None }
+    Some(ParsedResult::new(records, texts))
 }
-fn len(record: &Record) -> usize {
+fn record_len(record: &Record) -> usize {
     match record {
         Record(r) => r.len()
     }
 }
 
 pub fn table(texts: &str) -> Option<ParsedResult<Md>> {
-    let h = header(texts)?;
-    let texts = h.rest;
-    let h = h.token;
-    let num = len(&h);
-    let a = align(texts, num)?;
-    let texts = a.rest;
-    let a = a.token;
-    let r = records(texts, num)?;
-    let rest = r.rest;
-    let r = r.token;
-    let t = Table{header: h, align: a, records: r};
-    let t = Md::Table(Box::new(t));
-    Some(ParsedResult{token: t, rest})
+    let header_result = header(texts)?;
+    let header = header_result.token;
+    let column_num = record_len(&header);
+
+    let align_result = align(header_result.rest, column_num)?;
+    let align = align_result.token;
+
+    let records_result = records(align_result.rest, column_num)?;
+    let records = records_result.token;
+
+    let token = Md::Table(Box::new(Table{header, align, records}));
+    Some(ParsedResult::new(token, records_result.rest))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{words,record,normal_word};
 
     #[test]
     fn test_header() {
-        let h = "| A | B | C | \n";
-        let a = Words(vec!(Word::Normal("A".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let token = Record(vec!(a, b, c));
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let token = record!(a, b, c);
         let rest = "";
-        assert_eq!(header(&h), Some(ParsedResult{token, rest}));
+        assert_eq!(header(&"| A | B | C | \n"), Some(ParsedResult{token, rest}));
 
-        let h = "| A | B | C \n";
-        assert_eq!(header(&h), None);
-
-        let h = "|  | B | C |\n";
-        let a = Words(vec!(Word::Normal("".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let token = Record(vec!(a, b, c));
+        let nul = words!(normal_word!(""));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let token = record!(nul, b, c);
         let rest = "";
-        assert_eq!(header(&h), Some(ParsedResult{token, rest}));
+        assert_eq!(header(&"|  | B | C |\n"), Some(ParsedResult{token, rest}));
+        assert_eq!(header(&"| A | B | C \n"), None);
     }
 
     #[test]
     fn test_align() {
-        let h = "| -: | :-: | :- | --- |\n";
         let token = vec!(Align::Right, Align::Center, Align::Left, Align::Left);
         let rest = "";
-        assert_eq!(align(&h, 4), Some(ParsedResult{token, rest}));
-
-        let h = "| -: | :-b: | :- | - |\n";
-        assert_eq!(align(&h, 4), None);
-
-        let h = "|  | :-: | :- | - |\n";
-        assert_eq!(align(&h, 4), None);
+        assert_eq!(align(&"| -: | :-: | :- | --- |\n", 4), Some(ParsedResult{token, rest}));
+        assert_eq!(align(&"| -: | :-b: | :- | - |\n", 4), None);
+        assert_eq!(align(&"|  | :-: | :- | - |\n", 4), None);
     }
 
     #[test]
     fn test_records() {
-        let h = "| A | B | C |\n| a | b | c |\n| j | k | l |\n";
-        let a = Words(vec!(Word::Normal("A".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let r0 = Record(vec!(a, b, c));
-        let a = Words(vec!(Word::Normal("a".to_string())));
-        let b = Words(vec!(Word::Normal("b".to_string())));
-        let c = Words(vec!(Word::Normal("c".to_string())));
-        let r1 = Record(vec!(a, b, c));
-        let j = Words(vec!(Word::Normal("j".to_string())));
-        let k = Words(vec!(Word::Normal("k".to_string())));
-        let l = Words(vec!(Word::Normal("l".to_string())));
-        let r2 = Record(vec!(j, k, l));
-        let record = vec!(r0, r1, r2);
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let record0 = record!(a, b, c);
+        let a = words!(normal_word!("a"));
+        let b = words!(normal_word!("b"));
+        let c = words!(normal_word!("c"));
+        let record1 = record!(a, b, c);
+        let j = words!(normal_word!("j"));
+        let k = words!(normal_word!("k"));
+        let l = words!(normal_word!("l"));
+        let record2 = record!(j, k, l);
+        let token = vec!(record0, record1, record2);
         let rest = "";
-        assert_eq!(records(&h, 3), Some(ParsedResult{token: record, rest}));
+        assert_eq!(records(&"| A | B | C |\n| a | b | c |\n| j | k | l |\n", 3), Some(ParsedResult{token, rest}));
     }
     #[test]
     fn test_table() {
-        let test = "| A | B | C | \n|-:|--|:-:|\n| a | b | c |\n| j | k | l |\n";
-        let a = Words(vec!(Word::Normal("A".to_string())));
-        let b = Words(vec!(Word::Normal("B".to_string())));
-        let c = Words(vec!(Word::Normal("C".to_string())));
-        let he = Record(vec!(a, b, c));
+        let a = words!(normal_word!("A"));
+        let b = words!(normal_word!("B"));
+        let c = words!(normal_word!("C"));
+        let header = record!(a, b, c);
+        let align = vec!(Align::Right, Align::Left, Align::Center);
     
-        let al = vec!(Align::Right, Align::Left, Align::Center);
-    
-        let a = Words(vec!(Word::Normal("a".to_string())));
-        let b = Words(vec!(Word::Normal("b".to_string())));
-        let c = Words(vec!(Word::Normal("c".to_string())));
-        let r1 = Record(vec!(a, b, c));
-        let j = Words(vec!(Word::Normal("j".to_string())));
-        let k = Words(vec!(Word::Normal("k".to_string())));
-        let l = Words(vec!(Word::Normal("l".to_string())));
-        let r2 = Record(vec!(j, k, l));
-        let re = vec!(r1, r2);
+        let a = words!(normal_word!("a"));
+        let b = words!(normal_word!("b"));
+        let c = words!(normal_word!("c"));
+        let record0 = record!(a, b, c);
+        let j = words!(normal_word!("j"));
+        let k = words!(normal_word!("k"));
+        let l = words!(normal_word!("l"));
+        let record1 = record!(j, k, l);
+        let records = vec!(record0, record1);
 
-        let t = Table{header: he, align: al, records: re};
-        let t = Md::Table(Box::new(t));
-
-        assert_eq!(table(&test), Some(ParsedResult{token: t, rest: ""}));
+        let token = Md::Table(Box::new(Table{header, align, records}));
+        let rest = "";
+        assert_eq!(table(&"| A | B | C | \n|-:|--|:-:|\n| a | b | c |\n| j | k | l |\n"), Some(ParsedResult{token, rest}));
     }
 }
