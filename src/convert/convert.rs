@@ -61,22 +61,44 @@ fn convert_records(records: &Vec<Record>, aligns: &Vec<Align>) -> String {
         )
 }
 
-fn convert_table(table: Box<Table>) -> String {
-    let header = table.header;
-    let aligns = table.align;
-    let records = table.records;
+fn convert_table(table: &Box<Table>) -> String {
+    let header = &table.header;
+    let aligns = &table.align;
+    let records = &table.records;
 
-    let header = convert_header(&header);
+    let header = convert_header(header);
     let header = format!("<tr>{}</tr>", header);
-    let records = convert_records(&records, &aligns);
+    let records = convert_records(records, aligns);
     format!("<table>\n{}\n{}</table>\n", header, records)
 }
 
-fn to_html(md: Md) -> String {
+fn convert_item(item: &Item) -> String {
+    let words = &item.0;
+    let words = convert_words(words);
+    let children = &item.1;
+    let children = if children.0.is_empty() {
+        "".to_string()
+    } else {
+        format!("\n{}", convert_items(children))
+    };
+    format!("<li>{}{}</li>", words, children)
+}
+
+fn convert_items(items: &Items) -> String {
+    let items = items.0.iter().fold(
+        "".to_string(),
+        |html, item| 
+        format!("{}{}\n", html, convert_item(item))
+    );
+    format!("<ul>\n{}</ul>\n", items)
+}
+
+pub fn to_html(md: &Md) -> String {
     match md {
         Md::Heading(size, words) => format!("<h{}>{}</h{}>", size, convert_words(&words), size),
         Md::Sentence(words) => convert_words(&words),
-        Md::Table(table) => convert_table(table),
+        Md::Table(table) => convert_table(&table),
+        Md::List(items) => convert_items(&items),
         _ => panic!("testteafdsaf")
     }
 }
@@ -84,17 +106,24 @@ fn to_html(md: Md) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{normal_word,words};
+    use crate::{normal_word,words,items};
 
     #[test]
     fn test_to_html() {
         let words = words!(normal_word!("Hello"));
         let md = Md::Heading(1, words);
-        assert_eq!(to_html(md), "<h1>Hello</h1>".to_string());
+        assert_eq!(to_html(&md), "<h1>Hello</h1>".to_string());
 
         let words = words!(normal_word!("Hello"));
         let md = Md::Sentence(words);
-        assert_eq!(to_html(md), "Hello".to_string());
+        assert_eq!(to_html(&md), "Hello".to_string());
+
+        let words = words!(normal_word!("item"));
+        let items = items!();
+        let item = Item(words, items);
+        let items = items!(item);
+        let md = Md::List(items);
+        assert_eq!(to_html(&md), "<ul>\n<li>item</li>\n</ul>\n".to_string());
     }
 
     #[test]
@@ -171,6 +200,54 @@ mod tests {
         let records = vec!(record);
         let aligns = vec!(Align::Left);
         let table = Box::new(Table{header, align: aligns, records});
-        assert_eq!(convert_table(table), "<table>\n<tr><th>hello</th></tr>\n<tr><td align=\"left\">world</td></tr>\n</table>\n".to_string());
+        assert_eq!(convert_table(&table), "<table>\n<tr><th>hello</th></tr>\n<tr><td align=\"left\">world</td></tr>\n</table>\n".to_string());
+    }
+
+    #[test]
+    fn test_item_to_html() {
+        let words = words!(normal_word!("item"));
+        let items = items!();
+        let item = Item(words, items);
+        assert_eq!(convert_item(&item), "<li>item</li>".to_string());
+
+        let words = words!(normal_word!("parent"));
+        let words0 = words!(normal_word!("item"));
+        let item0 = Item(words0, items!());
+        let words1 = words!(normal_word!("item1"));
+        let item1 = Item(words1, items!());
+        let items = items!(item0, item1);
+        let item = Item(words, items);
+        let expect = "<li>parent\n<ul>\n<li>item</li>\n<li>item1</li>\n</ul>\n</li>".to_string();
+        assert_eq!(convert_item(&item), expect);
+    }
+
+    #[test]
+    fn test_items_to_html() {
+        let words0 = words!(normal_word!("item"));
+        let item0 = Item(words0, items!());
+        let words1 = words!(normal_word!("item1"));
+        let item1 = Item(words1, items!());
+        let items = items!(item0, item1);
+        assert_eq!(convert_items(&items), "<ul>\n<li>item</li>\n<li>item1</li>\n</ul>\n".to_string());
+
+        let words = words!(normal_word!("parent"));
+        let words0 = words!(normal_word!("item"));
+        let item0 = Item(words0, items!());
+        let words1 = words!(normal_word!("item1"));
+        let item1 = Item(words1, items!());
+        let items = items!(item0, item1);
+        let item0 = Item(words, items);
+    
+        let words = words!(normal_word!("parent"));
+        let words0 = words!(normal_word!("item"));
+        let item2 = Item(words0, items!());
+        let words1 = words!(normal_word!("item1"));
+        let item3 = Item(words1, items!());
+        let items = items!(item2, item3);
+        let item1 = Item(words, items);
+        let items = items!(item0, item1);
+        let expect = "<ul>\n<li>parent\n<ul>\n<li>item</li>\n<li>item1</li>\n</ul>\n</li>\n<li>parent\n<ul>\n<li>item</li>\n<li>item1</li>\n</ul>\n</li>\n</ul>\n".to_string();
+        assert_eq!(convert_items(&items), expect);
+
     }
 }
