@@ -11,45 +11,46 @@ fn word_to_html<'a>(word: &'a Word) -> String {
 }
 
 fn words_to_html<'a>(words: &'a Words) -> String {
-    words.0
-        .iter()
-        .fold(
-            "".to_string(),
-            |html, word| format!("{}{}", html, word_to_html(word))
-        )
+    let words = &words.0;
+    words.iter().map(|word| word_to_html(word))
+        .collect::<Vec<String>>()
+        .join("")
 }
 
 fn header_to_html(record: &Record) -> String {
-    record.0
-    .iter()
-    .fold(
-        "".to_string(),
-        |html, words| format!("{}<th>{}</th>", html, words_to_html(words))
+    let header = &record.0;
+    header.iter().map(
+        |words| format!("<th>{}</th>", words_to_html(words))
     )
+    .collect::<Vec<String>>()
+    .join("")
+}
+
+fn align_to_string<'a>(align: &Align) -> &'a str {
+    match align {
+        Align::Right => "right",
+        Align::Center => "center",
+        Align::Left => "left",
+    }
 }
 
 fn record_to_html(record: &Record, aligns: &Vec<Align>) -> String {
-    record.0.iter().zip(aligns.iter())
-        .fold(
-            "".to_string(),
-            |html, (words, align)| {
-                let a = match align {
-                    Align::Right => "right",
-                    Align::Center => "center",
-                    Align::Left => "left",
-                };
-                format!("{}<td align=\"{}\">{}</td>", html, a, words_to_html(words))
-            }
-        )
+    let record = &record.0;
+    record.iter().zip(aligns.iter()).map(
+        |(words, align)| {
+            let align = align_to_string(align);
+            format!("<td align=\"{}\">{}</td>", align, words_to_html(words))
+    })
+    .collect::<Vec<String>>()
+    .join("")
 }
 
 fn records_to_html(records: &Vec<Record>, aligns: &Vec<Align>) -> String {
-    records
-        .iter()
-        .fold(
-            "".to_string(),
-            |html, record| format!("{}<tr>{}</tr>\n", html, record_to_html(record, &aligns))
-        )
+    records.iter().map(|record| {
+        format!("<tr>{}</tr>\n", record_to_html(record, aligns))
+    })
+    .collect::<Vec<String>>()
+    .join("")
 }
 
 fn table_to_html(table: &Box<Table>) -> String {
@@ -76,12 +77,10 @@ fn item_to_html(item: &Item) -> String {
 }
 
 fn items_to_html(items: &Items) -> String {
-    let items = items.0.iter().fold(
-        "".to_string(),
-        |html, item| 
-        format!("{}{}\n", html, item_to_html(item))
-    );
-    format!("<ul>\n{}</ul>\n", items)
+    let items = &items.0;
+    let strings: Vec<String> = items.iter().map(|item| item_to_html(item)).collect();
+    let html = strings.join("\n");
+    format!("<ul>\n{}\n</ul>\n", html)
 }
 
 fn heading_to_html(size: &usize, words: &Words) -> String {
@@ -94,7 +93,6 @@ fn md_to_html(md: &Md) -> String {
         Md::Sentence(words) => words_to_html(&words),
         Md::Table(table) => table_to_html(&table),
         Md::List(items) => items_to_html(&items),
-        _ => panic!("testteafdsaf")
     }
 }
 
