@@ -93,9 +93,13 @@ fn convert_items(items: &Items) -> String {
     format!("<ul>\n{}</ul>\n", items)
 }
 
+fn heading_to_html(size: &usize, words: &Words) -> String {
+    format!("<h{}>{}</h{}>", size, convert_words(&words), size)
+}
+
 fn to_html(md: &Md) -> String {
     match md {
-        Md::Heading(size, words) => format!("<h{}>{}</h{}>", size, convert_words(&words), size),
+        Md::Heading(size, words) => heading_to_html(size, words),
         Md::Sentence(words) => convert_words(&words),
         Md::Table(table) => convert_table(&table),
         Md::List(items) => convert_items(&items),
