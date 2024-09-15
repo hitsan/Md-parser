@@ -1,6 +1,5 @@
 mod parser;
 mod convert;
-mod emit;
 
 use std::fs;
 use std::io;
