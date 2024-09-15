@@ -87,10 +87,14 @@ fn heading_to_html(size: &usize, words: &Words) -> String {
     format!("<h{}>{}</h{}>", size, words_to_html(&words), size)
 }
 
+fn sentence_to_html(words: &Words) -> String {
+    format!("{}<br />", words_to_html(&words))
+}
+
 fn md_to_html(md: &Md) -> String {
     match md {
         Md::Heading(size, words) => heading_to_html(size, words),
-        Md::Sentence(words) => words_to_html(&words),
+        Md::Sentence(words) => sentence_to_html(&words),
         Md::Table(table) => table_to_html(&table),
         Md::List(items) => items_to_html(&items),
     }
@@ -117,7 +121,7 @@ mod tests {
         let world_sentence = Md::Sentence(words);
 
         let mds = vec!(heading, hello_sentence, world_sentence);
-        assert_eq!(mds_to_html(&mds), "<h1>Heading</h1>\nHello\nWorld".to_string());
+        assert_eq!(mds_to_html(&mds), "<h1>Heading</h1>\nHello<br />\nWorld<br />".to_string());
     }
 
     #[test]
@@ -128,7 +132,7 @@ mod tests {
 
         let words = words!(normal_word!("Hello"));
         let md = Md::Sentence(words);
-        assert_eq!(md_to_html(&md), "Hello".to_string());
+        assert_eq!(md_to_html(&md), "Hello<br />".to_string());
 
         let words = words!(normal_word!("item"));
         let items = items!();
